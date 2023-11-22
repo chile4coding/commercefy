@@ -12,5 +12,84 @@ datasource db {
 
 model  BusinessOwner{
    id String @id @default(uuid())
+   email String @unique
+   firstName String
+   lastName String
+   pin String?
+   is_pin_enabled Boolean @default(false)
+   password String
+   phone String
+   accountNo String?
+   wallet Wallet?
+   avatar String?
+client  Client[]
+  
+  transaction Transaction[]
+invoice Invoice[]
+
+verify_otp Boolean @default(false)
+                otp_trial String @unique
+                otp_secret String
+                otp String?  @unique
+                KYC Boolean @default(false)
    
+}
+
+
+model Wallet{
+   id String @id @default(uuid())
+   balance Float @default(0)
+  holder BusinessOwner@relation(fields: [holder_id], references: [id])
+  holder_id  String @unique
+ 
+}
+
+
+model Client{
+  id String @id @default(uuid())
+  email String @unique
+  firstName String
+  lastName String
+  avatar String? 
+  loginPin String?
+  phone String
+  country String
+  city String
+  address String
+  state String
+  businessOwner  BusinessOwner ? @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id  String? 
+  transaction Transaction[]
+  invoice Invoice[]
+}
+
+model Transaction{
+  id String @id @default(uuid())
+  amount Float?
+  type String?
+  date String?
+  status String?
+  ref String ? @unique
+  client Client @relation(fields: [client_id], references: [id])
+  client_id String
+  businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id String
+  invoice Invoice?  @relation(fields: [invoice_id], references: [id])
+  invoice_id String ? @unique
+
+}
+
+model Invoice{
+  id String @id @default(uuid())
+  amountPaid Float?
+  date String?
+  status String?
+  client Client @relation(fields: [client_id], references: [id])
+  client_id String
+  businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id String
+  transaction_id Transaction?
+  items Json?
+  paymentLink String?
+  
 }
