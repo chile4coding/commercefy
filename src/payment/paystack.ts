@@ -229,7 +229,6 @@ export const verifyPayment = expressAsyncHandler(
 
 export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
-  console.log("this is getting here  ======================= ")
   const hash = crypto
   .createHmac("sha512", process.env.paystackAuthization as string)
     .update(JSON.stringify(req.body))
@@ -259,13 +258,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
-      console.log("this is getting here for the for the refences  ======================= ", invoice)
-      // updateTransactionStatus = await prisma.transaction.update({
-      //   where: { ref: reference },
-      //   data: {
-      //     status: status,
-      //   },
-      // });
+  
       const owner = await prisma.businessOwner.findUnique({
         where: { id: invoice?.businessOwner_id as string },
         include: {
@@ -273,9 +266,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
       
-            console.log(
-              "this is getting here for the for the success or  ======================= "
-            );
+        
 
       
       socket.emit(`${owner?.id}`, owner);
@@ -297,6 +288,12 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         where: { id: businessOwnerId as string },
         include: {
           wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
         },
       });
       const wallletAmount = Number(owner?.wallet?.balance);
@@ -314,10 +311,16 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
            where: { id: businessOwnerId as string },
            include: {
              wallet: true,
+             client:{
+              include: {
+                invoice: true
+              }
+             },
+             business:true
            },
          });
 
-         console.log("this is the owner  o ",  ownerN)
+        
       
    
              socket.emit(`${owner?.id}`, ownerN);
@@ -326,7 +329,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
     // Do something with event
 
-    console.log(event.data);
+   
   }
 });
 
