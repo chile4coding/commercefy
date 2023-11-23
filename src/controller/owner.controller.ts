@@ -290,6 +290,7 @@ export const createBusiness = expressAsyncHandler(
       address,
       country,
       state,
+      city,
       postalCode,
     } = req.body;
 
@@ -307,6 +308,7 @@ export const createBusiness = expressAsyncHandler(
           name: name,
           account_number: accountNo,
           bank_code: bankCode,
+          currency: "NGN",
         },
         {
           headers: {
@@ -317,14 +319,13 @@ export const createBusiness = expressAsyncHandler(
       );
 
       const { data } = response;
-      const { recipient_code: recipientBankId } = data;
 
       const business = await prisma.businessProfile.update({
         where: {
           owner_id: authId,
         },
         data: {
-          recipientBankId,
+          recipientBankId: data?.data?.recipient_code,
           businessName,
           accountNo,
           bankCode,
@@ -332,6 +333,7 @@ export const createBusiness = expressAsyncHandler(
           address,
           country,
           state,
+          city,
           postalCode,
         },
       });
@@ -423,7 +425,6 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
 export const createClientProfile = expressAsyncHandler(
   async (req: any, res, next) => {
-    console.log(req.authId);
     const errors = validationResult(req.body);
     if (!errors.isEmpty()) {
       throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
@@ -615,18 +616,17 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
     const owner = await prisma.businessOwner.findUnique({
       where: {
         id: id,
-        email:email
+        email: email,
       },
     });
 
-   
     if (!owner) {
       throwError("Invalid business owner", StatusCodes.BAD_REQUEST, true);
     }
 
     const updateBusinessOwner = await prisma.businessOwner.update({
       where: {
-        email:owner?.email
+        email: owner?.email,
       },
       data: {
         KYC: true,

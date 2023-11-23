@@ -227,7 +227,6 @@ export const verifyPayment = expressAsyncHandler(
 
       res.status(StatusCodes.OK).json({
         message: "Payment verified successfully",
-        
       });
 
       // fetch the invoice using the  trransaction reference
@@ -247,70 +246,49 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     .digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {
     // Retrieve the request's body
+    
 
     const event = req.body;
 
     if (
-      event.event === "charge.success" ||
-      event.event === "transfer.failed" ||
-      event.event === "transfer.reversed" ||
-      event.event === "transfer.success"
+      event.event === "charge.success"
     ) {
-      console.log(event.data);
+     
       const { reference, status, amount } = event.data;
 
       const invoice = await prisma.invoice.update({
         where: { id: reference },
         data: {
           status: status,
+          
         },
       });
+            const owner = await prisma.businessOwner.findUnique({
+              where: { id: invoice.businessOwner_id as string },
+              include: {
+                wallet: true,
+                client: {
+                  include: {
+                    invoice: true,
+                  },
+                },
+                business: true,
+              },
+            });
 
-      const owner = await prisma.businessOwner.findUnique({
-        where: { id: invoice?.businessOwner_id as string },
-        include: {
-          wallet: true,
-        },
-      });
 
-      socket.emit(`${owner?.id}`, owner);
-    }
-
-    if (
-      event.event === "charge.success" ||
-      event.event === "transfer.success"
-    ) {
-      const { reference, status, amount } = event.data;
-      const invoice = await prisma.invoice.findUnique({
-        where: { id: reference },
-      });
-
-      const businessOwnerId = invoice?.businessOwner_id;
-
-      const owner = await prisma.businessOwner.findUnique({
-        where: { id: businessOwnerId as string },
-        include: {
-          wallet: true,
-          client: {
-            include: {
-              invoice: true,
-            },
-          },
-          business: true,
-        },
-      });
       const wallletAmount = Number(owner?.wallet?.balance);
       const transactionAmount = Number(amount);
 
-      const walletUpdate = await prisma.wallet.update({
-        where: { id: owner?.wallet?.id },
-        data: {
-          balance: wallletAmount + transactionAmount,
-        },
-      });
-
-      const ownerN = await prisma.businessOwner.findUnique({
-        where: { id: businessOwnerId as string },
+         const walletUpdate = await prisma.wallet.update({
+           where: { id: owner?.wallet?.id },
+           data: {
+             balance: wallletAmount + transactionAmount,
+           },
+         });
+    
+       const ownerN = await prisma.businessOwner.findUnique({
+        where: { id: owner?.id as string },
         include: {
           wallet: true,
           client: {
@@ -322,42 +300,16 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
-      socket.emit(`${owner?.id}`, ownerN);
+      socket.emit(`${ownerN?.id}`, ownerN);
+    }
     }
 
+
+
     // Do something with event
-  }
+  
 });
 
-export const createTransferRecipient = expressAsyncHandler(async (req, res) => {
-  const { name, accountNumber, bankCode } = req.body;
-
-  try {
-    const response = await axios.post(
-      "https://api.paystack.co/transferrecipient",
-      {
-        type: "nuban",
-        name: name,
-        account_number: accountNumber,
-        bank_code: bankCode,
-        currency: "NGN",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.paystackAuthization}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // store that recipient code in the database of the business owner
-
-    return response.data;
-  } catch (error: any) {
-    console.error(error.response.data);
-    throw new Error("Failed to create transfer recipient");
-  }
-});
 
 export const getBankCode = expressAsyncHandler(async (req, res, next) => {
   try {
@@ -377,53 +329,103 @@ export const getBankCode = expressAsyncHandler(async (req, res, next) => {
   }
 });
 
-export const iniateTransfer = expressAsyncHandler(async (req, res, next) => {
-  const { amount, recipient } = req.body;
+export const iniateTransfer = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { amount, recipient } = req.body;
+    const { authId } = req;
+    try {
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: authId },
+        include: { wallet: true },
+      });
 
-  try {
-    const response = await axios.post(
-      "https://api.paystack.co/transfer",
-      {
-        source: "balance",
-        amount: amount,
-        recipient: recipient,
-        reason: "Withdrawal",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.paystackAuthization}`,
-          "Content-Type": "application/json",
-        },
+      if (!owner) {
+        throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
       }
-    );
 
-    return response.data;
-  } catch (error: any) {
-    next(error);
-  }
-});
-
-export const finalizeTransfer = expressAsyncHandler(async (req, res, next) => {
-  const { otp, transferCode } = req.body;
-
-  try {
-    const response = await axios.post(
-      `https://api.paystack.co/transfer/finalize_transfer/${transferCode}`,
-      {
-        otp: otp,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.paystackAuthization}`,
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        "https://api.paystack.co/transfer",
+        {
+          source: "balance",
+          amount: Number(amount),
+          recipient: recipient,
+          reason: "Withdrawal",
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.paystackAuthization}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    return response.data;
-  } catch (error) {
-    next(error);
+      const walletBalance = Number(owner?.wallet?.balance);
+      const details: any = response.data.data;
+      const { status, amount: balance } = details;
+      if (status === "success") {
+        const walletUpdate = await prisma.wallet.update({
+          where: { id: owner?.wallet?.id },
+          data: {
+            balance: walletBalance - Number(balance),
+          },
+        });
+      }
+
+      const ownerN = await prisma.businessOwner.findUnique({
+        where: { id: authId },
+        include: { wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
+        
+        },
+      });
+      socket.emit(`${ownerN?.id}`, owner);
+
+      res.status(StatusCodes.OK).json({
+        ownerN,
+      });
+    } catch (error: any) {
+      next(error);
+    }
   }
-});
+);
+
+// export const finalizeTransfer = expressAsyncHandler(async (req:any, res, next) => {
+//   const { otp, transferCode } = req.body;
+//   const {authId}  = req
+
+//      const owner = await prisma.businessOwner.findUnique({
+//        where: { id: authId },
+//        include: { wallet: true },
+//      });
+
+//      if (!owner) {
+//        throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
+//      }
+//      const walletBalance = Number(owner?.wallet?.balance);
+
+//   try {
+//     const response = await axios.post(
+//       `https://api.paystack.co/transfer/finalize_transfer/${transferCode}`,
+//       {
+//         otp: otp,
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.paystackAuthization}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     return response.data;
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // next you will have to work on the KYC verification process

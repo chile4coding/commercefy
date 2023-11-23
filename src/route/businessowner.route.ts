@@ -127,4 +127,5 @@ router.post("/update_business", auth, createBusiness);
 
 router.get("/verify_kyc", updateKYC);
 
+router.post("/create_business", auth, createBusiness)
 export const businessOwner = router;

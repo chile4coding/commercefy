@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   generateInvoice,
   getBankCode,
+  iniateTransfer,
   payBusinessOwner,
   paystackEvents,
   verifyPayment,
@@ -23,5 +24,6 @@ router.post(
 router.post("/generate_invoice", auth, generateInvoice);
 router.get("/verify_payment", verifyPayment);
 router.get("/get_banks", auth,  getBankCode)
+router.post("/withdraw", auth,  iniateTransfer)
 
 export const paystackRoutes = router;
