@@ -609,7 +609,7 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
 });
 export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
   const details = req.query.detail;
-  const ownersDetails = details.split(" ");
+  const ownersDetails = details.split("+");
   const [email, id] = ownersDetails;
 
   try {
