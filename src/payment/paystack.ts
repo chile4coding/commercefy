@@ -228,6 +228,8 @@ export const verifyPayment = expressAsyncHandler(
 );
 
 export const paystackEvents = expressAsyncHandler(async (req, res) => {
+
+  console.log("this is getting here  ======================= ")
   const hash = crypto
     .createHmac("sha512", process.env.paystackAuthization as string)
     .update(JSON.stringify(req.body))
