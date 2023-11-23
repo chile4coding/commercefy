@@ -609,9 +609,13 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
 });
 export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
   const details = req.query.detail;
-  const ownersDetails = details.split("+");
+  const ownersDetails = details.split(" ");
   const [email, id] = ownersDetails;
 
+  console.log("this is the owner aray ============= ",ownersDetails)
+  console.log("this is the email============= ",email)
+  console.log("this is id ============= ",id)
+  
   try {
     const owner = await prisma.businessOwner.findUnique({
       where: {
@@ -619,6 +623,7 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
         email: email,
       },
     });
+    console.log("this is id ============= ",owner)
 
     if (!owner) {
       throwError("Invalid business owner", StatusCodes.BAD_REQUEST, true);
