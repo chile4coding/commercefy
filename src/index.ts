@@ -5,13 +5,13 @@ import prisma from "./configuration/prisma-client";
 import morgan from "morgan";
 import router from "./route/route";
 import errorHandler from "./middleware/errorHandler";
-const Flutterwave = require("flutterwave-node-v3");
-const flw = new Flutterwave(process.env.PUBLIC_KEY, process.env.SECRETE_KEY);
-import Paystack from "paystack";
-import axios from "axios";
-import { cardPay } from "./payment/flutterwave";
-const request = require("request");
-const paystack = Paystack(process.env.paystackAuthization as string);
+// const Flutterwave = require("flutterwave-node-v3");
+// const flw = new Flutterwave(process.env.PUBLIC_KEY, process.env.SECRETE_KEY);
+// import Paystack from "paystack";
+// import axios from "axios";
+// import { cardPay } from "./payment/flutterwave";
+// const request = require("request");
+// const paystack = Paystack(process.env.paystackAuthization as string);
 
 dotenv.config();
 
@@ -149,15 +149,9 @@ app.use(router);
 // app.get("/py", (req, res) => {
 //   res.send("hello");
 // })
-app.get("/api/v1/p", (request:any, response) => {
-  const {p} = request.query
 
-  console.log(p)
-
-  response.send("hello");
-});
 app.use(errorHandler);
-app.listen(3000, async () => {
+app.listen(process.env.PORT, async () => {
   try {
     await prisma.$connect();
   } catch (error) {
