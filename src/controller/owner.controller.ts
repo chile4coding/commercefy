@@ -12,12 +12,13 @@ import {
   verifyTwoFactorAuth,
 } from "../utills/helpers";
 import dotenv from "dotenv";
+import axios from "axios";
+import { socket } from "../server/server";
 dotenv.config();
 const { ComplyCube } = require("@complycube/api");
 const complycube = new ComplyCube({
   apiKey: process.env.COMPLYCUBE_API_KEY,
 });
-
 
 export const createBusinessOwner = expressAsyncHandler(
   async (req, res, next) => {
@@ -27,18 +28,18 @@ export const createBusinessOwner = expressAsyncHandler(
       throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
     }
 
+   
+
     try {
       const findOwner = await prisma.businessOwner.findUnique({
         where: {
           email: email,
         },
       });
- 
+
       if (findOwner) {
-     
         throwError("User Already exist", StatusCodes.BAD_REQUEST, true);
       }
-     
 
       const { token, secret } = await reqTwoFactorAuth();
       const hashedPassword = await hashPassword(password);
@@ -61,11 +62,18 @@ export const createBusinessOwner = expressAsyncHandler(
           holder: { connect: { id: user.id } },
         },
       });
+
+      await prisma.businessProfile.create({
+        data: {
+          owner: { connect: { id: user.id } },
+        },
+      });
+
       res.status(200).json({
         message: "OTP sent to your email",
       });
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
 );
@@ -167,26 +175,23 @@ export const loginUser = expressAsyncHandler(async (req, res, next) => {
 
   try {
     const { password, email } = req.body;
- 
 
     const findUser = await prisma.businessOwner.findUnique({
       where: {
         email: email,
       },
-      include:{
-        wallet:true,
-        client:{
-          include:{
-            invoice:true,
-            transaction:true
+      include: {
+        wallet: true,
+        business:true,
+        client: {
+          include: {
+            invoice: true,
+            transaction: true,
             
-          }
-        }
-      }
-
-  
+          },
+        },
+      },
     });
-
 
     if (!findUser) {
       throwError("User not registered", StatusCodes.BAD_REQUEST, true);
@@ -200,7 +205,7 @@ export const loginUser = expressAsyncHandler(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
       message: "Login succesful",
       token: token,
-      findUser
+      findUser,
     });
   } catch (error) {
     next(error);
@@ -217,7 +222,17 @@ export const updateProfile = expressAsyncHandler(
 
     const { authId } = req;
     try {
-      const { firstname, lastname, phone, email, accountNo } = req.body;
+      const {
+        firstname,
+        lastname,
+        phone,
+        email,
+        dateOfBirth,
+        nationality,
+        street,
+        state,
+        postalCode,
+      } = req.body;
 
       const findUser = await prisma.businessOwner.findUnique({
         where: {
@@ -236,7 +251,11 @@ export const updateProfile = expressAsyncHandler(
           lastName: lastname,
           phone,
           email,
-          accountNo,
+          dateOfBirth,
+          nationality,
+          street,
+          state,
+          postalCode,
         },
         select: {
           firstName: true,
@@ -255,6 +274,77 @@ export const updateProfile = expressAsyncHandler(
         message: "profile updated successfully",
 
         updateUser,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+export const createBusiness = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+    const {
+      businessName,
+      name,
+      accountNo,
+      bankCode,
+      businessReg,
+      address,
+      country,
+      state,
+      postalCode,
+    } = req.body;
+
+    try {
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: authId },
+      });
+      if (!owner?.KYC) {
+        throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+      }
+      const response = await axios.post(
+        "https://api.paystack.co/transferrecipient",
+        {
+          type: "nuban",
+          name: name,
+          account_number: accountNo,
+          bank_code: bankCode,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.paystackAuthization}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const { data } = response;
+      const { recipient_code: recipientBankId } = data;
+
+      const business = await prisma.businessProfile.update({
+        where: {
+          owner_id: authId,
+        },
+        data: {
+          recipientBankId,
+          businessName,
+          accountNo,
+          bankCode,
+          businessReg,
+          address,
+          country,
+          state,
+          postalCode,
+        },
+      });
+
+      if (!business) {
+        throwError("Server error", StatusCodes.BAD_REQUEST, true);
+      }
+      res.status(StatusCodes.OK).json({
+        message: "Business updated successfully",
+        business,
       });
     } catch (error) {
       next(error);
@@ -303,7 +393,7 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
   const { authId } = req;
   const { pin } = req.body;
-  if(pin.length !== 4){
+  if (pin.length !== 4) {
     throwError("Invalid pin", StatusCodes.BAD_REQUEST, true);
   }
   try {
@@ -336,26 +426,22 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
 export const createClientProfile = expressAsyncHandler(
   async (req: any, res, next) => {
-    console.log(req.authId)
+    console.log(req.authId);
     const errors = validationResult(req.body);
-    if(!errors.isEmpty()){
+    if (!errors.isEmpty()) {
       throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
     }
 
-    const { email, firstName, lastName, phone, country, state, city, address } =
-      req.body;
-      console.log(req.body)
+    const { email, name, phone, address } = req.body;
+
 
     const { authId } = req;
     try {
       const findUser = await prisma.client.findUnique({
         where: {
-          email
-          
+          email,
         },
       });
-
-    
 
       if (findUser?.businessOwner_id === authId) {
         throwError(
@@ -364,15 +450,15 @@ export const createClientProfile = expressAsyncHandler(
           true
         );
       }
+      const clienExist =  await prisma.client.findUnique({where:{email:email}});
+      if(clienExist){
+        throwError("Client already exist", StatusCodes.BAD_REQUEST, true);
+      }
       const createClient = await prisma.client.create({
         data: {
           email,
-          firstName,
-          lastName,
           phone,
-          country,
-          state,
-          city,
+          name,
           address,
           businessOwner: {
             connect: {
@@ -381,7 +467,7 @@ export const createClientProfile = expressAsyncHandler(
           },
         },
       });
- 
+
       if (!createClient) {
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
@@ -390,7 +476,7 @@ export const createClientProfile = expressAsyncHandler(
         createClient,
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       next(error);
     }
   }
@@ -436,17 +522,7 @@ export const updateClientProfile = expressAsyncHandler(
     const { authId } = req;
 
     try {
-      const {
-        email,
-        firstName,
-        lastName,
-        phone,
-        country,
-        state,
-        city,
-        address,
-        clientId,
-      } = req.body;
+      const { email, name, phone, address, clientId } = req.body;
 
       const findUser = await prisma.businessOwner.findUnique({
         where: {
@@ -472,12 +548,8 @@ export const updateClientProfile = expressAsyncHandler(
         where: { id: clientId },
         data: {
           email,
-          firstName,
-          lastName,
+          name,
           phone,
-          country,
-          state,
-          city,
           address,
         },
       });
@@ -532,8 +604,8 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
     });
 
     res.status(StatusCodes.OK).json({
-      session
-    })
+      session,
+    });
   } catch (error) {}
 });
 export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {

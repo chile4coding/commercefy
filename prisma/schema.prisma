@@ -20,19 +20,42 @@ model  BusinessOwner{
    password String
    phone String?
    accountNo String?
+   dateOfBirth String?
+   nationality String?
+   occupation String?
+   street String?
+   city String?
+   state String?
+   postalCode String?
    wallet Wallet?
    avatar String?
 client  Client[]
-  
   transaction Transaction[]
 invoice Invoice[]
-
 verify_otp Boolean @default(false)
                 otp_trial String @unique
                 otp_secret String
                 otp String?  @unique
                 KYC Boolean @default(false)
+
+                business BusinessProfile[]
    
+}
+
+model BusinessProfile{
+   id String @id @default(uuid())
+businessName String?
+businessReg String?
+address String?
+country String?
+city String?
+state String?
+postalCode String?
+accountNo String?
+recipientBankId String?
+bankCode String?
+  owner BusinessOwner @relation(fields: [owner_id], references: [id])
+  owner_id  String @unique
 }
 
 
@@ -48,14 +71,13 @@ model Wallet{
 model Client{
   id String @id @default(uuid())
   email String @unique
-  firstName String
-  lastName String
+ name String
   avatar String? 
-  phone String
-  country String
-  city String
-  address String
-  state String
+  phone String?
+  country String?
+  city String?
+  address String?
+  state String?
   businessOwner  BusinessOwner ? @relation(fields: [businessOwner_id], references: [id])
   businessOwner_id  String? 
   transaction Transaction[]
@@ -71,7 +93,7 @@ model Transaction{
   ref String ? @unique
   client Client @relation(fields: [client_id], references: [id])
   client_id String
-  businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner BusinessOwner  @relation(fields: [businessOwner_id], references: [id])
   businessOwner_id String
   invoice Invoice?  @relation(fields: [invoice_id], references: [id])
   invoice_id String ? @unique
@@ -83,10 +105,18 @@ model Invoice{
   amountPaid Float?
   date String?
   status String?
-  client Client @relation(fields: [client_id], references: [id])
-  client_id String
+  name String?
+  phone String?
+  email String?
+  address String?
+  subTotal String?
+  discount String?
+  tax String?
+
+  client Client ? @relation(fields: [client_id], references: [id])
+  client_id String ?
   businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
-  businessOwner_id String
+  businessOwner_id String ?
   transaction_id Transaction?
   items Json?
   paymentLink String?

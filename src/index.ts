@@ -5,6 +5,8 @@ import prisma from "./configuration/prisma-client";
 import morgan from "morgan";
 import router from "./route/route";
 import errorHandler from "./middleware/errorHandler";
+import { SocketServer, expressServer } from "./server/server";
+import { app } from "./server/server";
 // const Flutterwave = require("flutterwave-node-v3");
 // const flw = new Flutterwave(process.env.PUBLIC_KEY, process.env.SECRETE_KEY);
 // import Paystack from "paystack";
@@ -15,7 +17,7 @@ import errorHandler from "./middleware/errorHandler";
 
 dotenv.config();
 
-const app = express();
+
 app.use(bodyParser.json());
 app.use(morgan("dev"));
 app.use(router);
@@ -151,7 +153,8 @@ app.use(router);
 // })
 
 app.use(errorHandler);
-app.listen(process.env.PORT, async () => {
+SocketServer()
+expressServer.listen(process.env.PORT, async () => {
   try {
     await prisma.$connect();
   } catch (error) {

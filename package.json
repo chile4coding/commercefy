@@ -67,6 +67,7 @@
     "nodemailer": "^6.9.7",
     "paystack": "^2.0.1",
     "request": "^2.88.2",
+    "socket.io": "^4.7.2",
     "speakeasy": "^2.0.0",
     "statuscode": "^0.0.0"
   },

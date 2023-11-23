@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { body, check } from "express-validator";
 import {
+  createBusiness,
   createBusinessOwner,
   createClientProfile,
   enablePin,
@@ -54,7 +55,7 @@ router.patch(
     body("lastname").notEmpty().withMessage("Invalid last name"),
     body("phone").notEmpty().withMessage("Invalid phone"),
     body("email").notEmpty().withMessage("Invalid email"),
-    body("accountNo").notEmpty().withMessage("Invalid account number"),
+   
   ],
   updateProfile
 );
@@ -83,11 +84,8 @@ router.post(
   auth,
   [
     body("email").isEmail().notEmpty().withMessage("Invalid email"),
-    body("firstName").notEmpty().withMessage("Invalid  first name"),
-    body("flastnName").notEmpty().withMessage("Invalid  last name"),
+    body("name").notEmpty().withMessage("Invalid  first name"),
     body("phone").notEmpty().withMessage("Invalid phone"),
-    body("state").notEmpty().withMessage("Invalid  state"),
-    body("city").notEmpty().withMessage("Invalid  city"),
     body("address").notEmpty().withMessage("Invalid  address"),
   ],
   createClientProfile
@@ -98,13 +96,9 @@ router.patch(
   auth,
   [
     body("email").isEmail().notEmpty().withMessage("Invalid email"),
-    body("firstName").notEmpty().withMessage("Invalid  first name"),
-    body("flastnName").notEmpty().withMessage("Invalid  last name"),
+    body("name").notEmpty().withMessage("Invalid  first name"),
     body("phone").notEmpty().withMessage("Invalid phone"),
-    body("state").notEmpty().withMessage("Invalid  state"),
-    body("city").notEmpty().withMessage("Invalid  city"),
     body("address").notEmpty().withMessage("Invalid  address"),
-    body("clientId").notEmpty().withMessage("Invalid  client id"),
   ],
   updateProfile
 );
@@ -129,6 +123,7 @@ router.post(
   ],
   verifyKYC
 );
+router.post("/update_business", auth, createBusiness);
 
 router.get("/verify_kyc", updateKYC);
 
