@@ -249,9 +249,12 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     event.event === "transfer.reversed" ||
     event.event === "transfer.success"
     ) {
+
+      console.log(event.data)
       const { reference, status, amount } = event.data;
-      console.log("this is getting here for the for the refences  ======================= ")
-      console.log("this is getting here for the for the refences  ======================= ")
+      console.log("this is getting here for the for the refences  ======================= ", reference)
+      console.log("this is getting here for the for the refences  ======================= ", status)
+      console.log("this is getting here for the for the refences  ======================= ", amount)
       
       invoice = await prisma.invoice.update({
         where: { id: reference },
