@@ -11,6 +11,7 @@ export function SocketServer() {
  
   io.on("connection", (socket: Socket) => {
     
+    console.log("A device has connected check it ======== ", socket.id)
   });
   return socketEvent;
 }
