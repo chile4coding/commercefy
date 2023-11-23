@@ -5,7 +5,8 @@ import { StatusCodes } from "http-status-codes";
 import { throwError } from "../utills/helpers";
 import crypto from "crypto"
 
-
+import dotenv from "dotenv"
+dotenv.config()
 import { verify } from "crypto";
 const paystack = Paystack(process.env.paystackAuthization as string);
 
@@ -14,7 +15,17 @@ export const payBusinessOwner = expressAsyncHandler(
     const { email, amount, name, invoiceNo, item } = req.body;
     const { authId } = req;
 
+    console.log(req.body)
+    console.log(authId)
     try {
+      const owner =  await prisma.businessOwner.findUnique({
+        where: {
+          id: authId,
+        },
+      });
+      // if (!owner?.KYC) {
+      //   throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+      // }
       const invoiceRef = await prisma.invoice.update({
         where: {
           id: invoiceNo,
@@ -24,15 +35,15 @@ export const payBusinessOwner = expressAsyncHandler(
           amountPaid: Number(amount),
         },
       });
-      if (invoiceRef) {
-        throwError("Invoice already exists", StatusCodes.BAD_REQUEST, true);
+      if (!invoiceRef) {
+        throwError("Error occured", StatusCodes.BAD_REQUEST, true);
       }
       const initPayment = await paystack.transaction.initialize({
         name: name,
         amount: Number(amount) * 100,
         email: email,
         reference: invoiceRef?.id as string,
-        callback_url: "http://locahost:300/api/v1/verify_payment",
+        callback_url: `${process.env.base_url}/verify_payment`,
         authorization: `Bearer ${process.env.paystackAuthization}`,
       });
 
@@ -72,7 +83,16 @@ export const generateInvoice = expressAsyncHandler(
   async (req: any, res, next) => {
     const { authId } = req;
     const { clientId } = req.body;
+
+    console.log(clientId)
     try {
+      const owner  = await prisma.businessOwner.findUnique({
+        where:{id:authId}
+      })
+      // if(!owner?.KYC){
+      //   throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+
+      // }
       const createInvoice = await prisma.invoice.create({
         data: {
           client: { connect: { id: clientId } },
@@ -94,7 +114,9 @@ export const generateInvoice = expressAsyncHandler(
 
 export const verifyPayment = expressAsyncHandler(
   async (req: any, res, next) => {
-    const { reference } = req.params;
+    const { reference } = req.query;
+
+    
     try {
       const verifyPayment = await paystack.transaction.verify(reference);
       //  after payment is verified
@@ -107,6 +129,7 @@ export const verifyPayment = expressAsyncHandler(
             status: verifyPayment.data.status,
           },
         });
+        console.log(verifyPayment)
 
         updateTransactionStatus = await prisma.transaction.update({
           where: { ref: reference },

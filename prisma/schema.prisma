@@ -13,12 +13,12 @@ datasource db {
 model  BusinessOwner{
    id String @id @default(uuid())
    email String @unique
-   firstName String
-   lastName String
+   firstName String?
+   lastName String?
    pin String?
    is_pin_enabled Boolean @default(false)
    password String
-   phone String
+   phone String?
    accountNo String?
    wallet Wallet?
    avatar String?
@@ -51,7 +51,6 @@ model Client{
   firstName String
   lastName String
   avatar String? 
-  loginPin String?
   phone String
   country String
   city String

@@ -11,14 +11,17 @@ import {
   throwError,
   verifyTwoFactorAuth,
 } from "../utills/helpers";
+import dotenv from "dotenv";
+dotenv.config();
 const { ComplyCube } = require("@complycube/api");
 const complycube = new ComplyCube({
   apiKey: process.env.COMPLYCUBE_API_KEY,
 });
 
+
 export const createBusinessOwner = expressAsyncHandler(
   async (req, res, next) => {
-    const { email, firstname, lastname, phone, password } = req.body;
+    const { email, password } = req.body;
     const errors = validationResult(req.body);
     if (!errors.isEmpty()) {
       throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
@@ -30,24 +33,26 @@ export const createBusinessOwner = expressAsyncHandler(
           email: email,
         },
       });
+ 
       if (findOwner) {
+     
         throwError("User Already exist", StatusCodes.BAD_REQUEST, true);
       }
+     
+
       const { token, secret } = await reqTwoFactorAuth();
       const hashedPassword = await hashPassword(password);
       const user = await prisma.businessOwner.create({
         data: {
-          firstName: firstname as string,
-          lastName: lastname as string,
           email: email,
-          phone: phone,
+
           verify_otp: false,
           otp_trial: token,
           otp_secret: secret.base32,
           password: hashedPassword,
         },
       });
-      const content = `<p>Eter your OTP to complete your registration</p><h2>OTP: ${token}</h2>`;
+      const content = `<p>Enter your OTP to complete your registration</p><h2>OTP: ${token}</h2>`;
       const subject = "Account Registration";
       await sendEmail(content, user.email, subject);
       await prisma.wallet.create({
@@ -59,7 +64,9 @@ export const createBusinessOwner = expressAsyncHandler(
       res.status(200).json({
         message: "OTP sent to your email",
       });
-    } catch (error) {}
+    } catch (error) {
+      next(error)
+    }
   }
 );
 
@@ -159,16 +166,27 @@ export const loginUser = expressAsyncHandler(async (req, res, next) => {
   }
 
   try {
-    const { password, email } = req.params;
+    const { password, email } = req.body;
+ 
 
     const findUser = await prisma.businessOwner.findUnique({
       where: {
         email: email,
       },
-      include: {
-        wallet: true,
-      },
+      include:{
+        wallet:true,
+        client:{
+          include:{
+            invoice:true,
+            transaction:true
+            
+          }
+        }
+      }
+
+  
     });
+
 
     if (!findUser) {
       throwError("User not registered", StatusCodes.BAD_REQUEST, true);
@@ -182,6 +200,7 @@ export const loginUser = expressAsyncHandler(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
       message: "Login succesful",
       token: token,
+      findUser
     });
   } catch (error) {
     next(error);
@@ -284,6 +303,9 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
   const { authId } = req;
   const { pin } = req.body;
+  if(pin.length !== 4){
+    throwError("Invalid pin", StatusCodes.BAD_REQUEST, true);
+  }
   try {
     const updatePics = await prisma.businessOwner.update({
       where: { id: authId },
@@ -314,20 +336,28 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
 export const createClientProfile = expressAsyncHandler(
   async (req: any, res, next) => {
+    console.log(req.authId)
     const errors = validationResult(req.body);
+    if(!errors.isEmpty()){
+      throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
+    }
 
     const { email, firstName, lastName, phone, country, state, city, address } =
       req.body;
+      console.log(req.body)
 
     const { authId } = req;
     try {
-      const findUser = await prisma.client.findFirst({
+      const findUser = await prisma.client.findUnique({
         where: {
-          businessOwner_id: authId,
+          email
+          
         },
       });
 
-      if (!findUser) {
+    
+
+      if (findUser?.businessOwner_id === authId) {
         throwError(
           "Client has been registered already by your business",
           StatusCodes.BAD_REQUEST,
@@ -344,8 +374,14 @@ export const createClientProfile = expressAsyncHandler(
           state,
           city,
           address,
+          businessOwner: {
+            connect: {
+              id: authId,
+            },
+          },
         },
       });
+ 
       if (!createClient) {
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
@@ -354,6 +390,7 @@ export const createClientProfile = expressAsyncHandler(
         createClient,
       });
     } catch (error) {
+      console.log(error)
       next(error);
     }
   }
@@ -489,10 +526,14 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
         "identity_check",
         "document_check",
       ],
-      successUrl: `http://localhost:3000/kyc?${email}+${password}+${authId}`,
+      successUrl: `${process.env.base_url}/kyc?${email}+${password}+${authId}`,
       cancelUrl: "https://www.yoursite.com/cancel",
       theme: "light",
     });
+
+    res.status(StatusCodes.OK).json({
+      session
+    })
   } catch (error) {}
 });
 export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {

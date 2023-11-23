@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { body } from "express-validator";
+import { body, check } from "express-validator";
 import {
   createBusinessOwner,
   createClientProfile,
@@ -20,9 +20,6 @@ router.post(
   "/signup_business_owner",
   [
     body("email").isEmail(),
-    body("phone").isNumeric().withMessage("Invalid phone"),
-    body("firstname").isString().withMessage("Invalid first name"),
-    body("lastname").notEmpty().withMessage("Invalid last name"),
     body("password").notEmpty().withMessage("Invalid password"),
   ],
   createBusinessOwner
@@ -51,9 +48,9 @@ router.post(
 
 router.patch(
   "/update_business_owner_profile",
+  auth,
   [
     body("firstname").notEmpty().withMessage("Invalid first name"),
-    body("lastname").notEmpty().withMessage("Invalid last name"),
     body("lastname").notEmpty().withMessage("Invalid last name"),
     body("phone").notEmpty().withMessage("Invalid phone"),
     body("email").notEmpty().withMessage("Invalid email"),
@@ -64,6 +61,7 @@ router.patch(
 
 router.put(
   "/upload_business_owner_image",
+  auth,
   body("avatar").notEmpty().withMessage("Invalid avatar"),
   updateAvatar
 );
@@ -71,7 +69,11 @@ router.put(
 router.patch(
   "/enable_pin",
   auth,
-  body("pin").notEmpty().withMessage("Invalid pin"),
+  check("pin")
+    .trim()
+    .isLength({ max: 4 })
+    .notEmpty()
+    .withMessage("Invalid pin"),
 
   enablePin
 );
@@ -119,6 +121,7 @@ router.patch(
 router.post(
   "/do_kyc",
   auth,
+
   [
     body("email").isEmail().notEmpty().withMessage("Invalid email"),
     body("firstName").notEmpty().withMessage("Invalid  first name"),
