@@ -6,6 +6,7 @@ import morgan from "morgan";
 import router from "./route/route";
 import errorHandler from "./middleware/errorHandler";
 import { SocketServer, expressServer } from "./server/server";
+import cors from "cors"
 import { app } from "./server/server";
 // const Flutterwave = require("flutterwave-node-v3");
 // const flw = new Flutterwave(process.env.PUBLIC_KEY, process.env.SECRETE_KEY);
@@ -16,6 +17,7 @@ import { app } from "./server/server";
 // const paystack = Paystack(process.env.paystackAuthization as string);
 
 dotenv.config();
+app.use(cors({origin:"*"}))
 
 
 app.use(bodyParser.json());
