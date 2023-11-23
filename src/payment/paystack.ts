@@ -117,25 +117,23 @@ export const generateInvoice = expressAsyncHandler(
     const { authId } = req;
     const { clientId } = req.body;
 
-    console.log(authId)
- 
+    console.log(authId);
 
     try {
       const owner = await prisma.businessOwner.findUnique({
         where: { id: authId },
       });
 
-      console.log(owner)
+      console.log(owner);
       // if (!owner?.KYC) {
       //   throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
       // }
       const createInvoice = await prisma.invoice.create({
         data: {
-        status:"pending",
-        client:{connect:{id:clientId}},
-        businessOwner:{connect:{id:authId}},
-        date: `${new Date().toLocaleDateString("en-UK")}`,
-         
+          status: "pending",
+          client: { connect: { id: clientId } },
+          businessOwner: { connect: { id: authId } },
+          date: `${new Date().toLocaleDateString("en-UK")}`,
         },
       });
       res.status(StatusCodes.OK).json({
@@ -164,7 +162,6 @@ export const verifyPayment = expressAsyncHandler(
             status: verifyPayment.data.status,
           },
         });
-        
 
         // updateTransactionStatus = await prisma.transaction.update({
         //   where: { ref: reference },
@@ -187,19 +184,22 @@ export const verifyPayment = expressAsyncHandler(
         // });
       }
 
-      const businessOwnerId = invoice.businessOwner_id
+      const businessOwnerId = invoice.businessOwner_id;
       const clientId = invoice.client_id;
       const owner = await prisma.businessOwner.findUnique({
         where: { id: businessOwnerId as string },
         include: {
           wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
         },
       });
       const wallletAmount = Number(owner?.wallet?.balance);
       const transactionAmount = Number(verifyPayment?.data?.amount);
-
-  
-        socket.emit(`${owner?.id}`, owner);
 
       if (invoice.status == "success") {
         const walletUpdate = await prisma.wallet.update({
@@ -208,15 +208,28 @@ export const verifyPayment = expressAsyncHandler(
             balance: wallletAmount + transactionAmount,
           },
         });
-
-        res.status(StatusCodes.OK).json({
-          message: "Payment verified successfully",
-        });
-      } else {
-        res.status(StatusCodes.OK).json({
-          message: "Payment failed",
-        });
       }
+
+      const ownerN = await prisma.businessOwner.findUnique({
+        where: { id: businessOwnerId as string },
+        include: {
+          wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
+        },
+      });
+
+      socket.emit(`${ownerN?.id}`, owner);
+
+      res.status(StatusCodes.OK).json({
+        message: "Payment verified successfully",
+        
+      });
+
       // fetch the invoice using the  trransaction reference
       // update the transaction transaction status
       // get the business owner and update the wallet if successful
@@ -228,9 +241,8 @@ export const verifyPayment = expressAsyncHandler(
 );
 
 export const paystackEvents = expressAsyncHandler(async (req, res) => {
-
   const hash = crypto
-  .createHmac("sha512", process.env.paystackAuthization as string)
+    .createHmac("sha512", process.env.paystackAuthization as string)
     .update(JSON.stringify(req.body))
     .digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {
@@ -238,39 +250,30 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
     const event = req.body;
 
-  
-
-  
-  if (
-    event.event === "charge.success" ||
-    event.event === "transfer.failed" ||
-    event.event === "transfer.reversed" ||
-    event.event === "transfer.success"
+    if (
+      event.event === "charge.success" ||
+      event.event === "transfer.failed" ||
+      event.event === "transfer.reversed" ||
+      event.event === "transfer.success"
     ) {
-
-      console.log(event.data)
+      console.log(event.data);
       const { reference, status, amount } = event.data;
-    
-   const    invoice = await prisma.invoice.update({
+
+      const invoice = await prisma.invoice.update({
         where: { id: reference },
         data: {
           status: status,
         },
       });
 
-  
       const owner = await prisma.businessOwner.findUnique({
         where: { id: invoice?.businessOwner_id as string },
         include: {
           wallet: true,
         },
       });
-      
-        
 
-      
       socket.emit(`${owner?.id}`, owner);
-
     }
 
     if (
@@ -278,12 +281,12 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       event.event === "transfer.success"
     ) {
       const { reference, status, amount } = event.data;
-        const invoice = await prisma.invoice.findUnique({
-          where: { id: reference },
-        });
+      const invoice = await prisma.invoice.findUnique({
+        where: { id: reference },
+      });
 
       const businessOwnerId = invoice?.businessOwner_id;
- 
+
       const owner = await prisma.businessOwner.findUnique({
         where: { id: businessOwnerId as string },
         include: {
@@ -306,30 +309,23 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
+      const ownerN = await prisma.businessOwner.findUnique({
+        where: { id: businessOwnerId as string },
+        include: {
+          wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
+        },
+      });
 
-         const ownerN = await prisma.businessOwner.findUnique({
-           where: { id: businessOwnerId as string },
-           include: {
-             wallet: true,
-             client:{
-              include: {
-                invoice: true
-              }
-             },
-             business:true
-           },
-         });
-
-        
-      
-   
-             socket.emit(`${owner?.id}`, ownerN);
-
+      socket.emit(`${owner?.id}`, ownerN);
     }
 
     // Do something with event
-
-   
   }
 });
 
