@@ -231,24 +231,28 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
   console.log("this is getting here  ======================= ")
   const hash = crypto
-    .createHmac("sha512", process.env.paystackAuthization as string)
+  .createHmac("sha512", process.env.paystackAuthization as string)
     .update(JSON.stringify(req.body))
     .digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {
     // Retrieve the request's body
 
     const event = req.body;
-    let invoice;
-    let updateTransactionStatus;
-
-    if (
-      event.event === "charge.success" ||
-      event.event === "transfer.failed" ||
-      event.event === "transfer.reversed" ||
-      event.event === "transfer.success"
+  console.log("this is getting here for the events  ======================= ")
+  
+  let invoice;
+  let updateTransactionStatus;
+  
+  if (
+    event.event === "charge.success" ||
+    event.event === "transfer.failed" ||
+    event.event === "transfer.reversed" ||
+    event.event === "transfer.success"
     ) {
       const { reference, status, amount } = event.data;
-
+      console.log("this is getting here for the for the refences  ======================= ")
+      console.log("this is getting here for the for the refences  ======================= ")
+      
       invoice = await prisma.invoice.update({
         where: { id: reference },
         data: {
@@ -268,9 +272,9 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
           wallet: true,
         },
       });
-
- 
-              socket.emit(`${owner?.id}`, owner);
+      
+      
+      socket.emit(`${owner?.id}`, owner);
 
     }
 
@@ -280,6 +284,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     ) {
       const { reference, status, amount } = event.data;
       const businessOwnerId = invoice?.businessOwner_id;
+      console.log("this is getting here for the for the success or  ======================= ")
 
       const clientId = invoice?.client_id;
       const owner = await prisma.businessOwner.findUnique({
@@ -320,10 +325,11 @@ export const createTransferRecipient = expressAsyncHandler(async (req, res) => {
         name: name,
         account_number: accountNumber,
         bank_code: bankCode,
+        currency: "NGN",
       },
       {
         headers: {
-          Authorization: "Bearer YOUR_PAYSTACK_SECRET_KEY",
+          Authorization: `Bearer ${process.env.paystackAuthization}`,
           "Content-Type": "application/json",
         },
       }
@@ -370,7 +376,7 @@ export const iniateTransfer = expressAsyncHandler(async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: "Bearer YOUR_PAYSTACK_SECRET_KEY",
+          Authorization: `Bearer ${process.env.paystackAuthization}`,
           "Content-Type": "application/json",
         },
       }
@@ -393,7 +399,7 @@ export const finalizeTransfer = expressAsyncHandler(async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: "Bearer YOUR_PAYSTACK_SECRET_KEY",
+          Authorization: `Bearer ${process.env.paystackAuthization}`,
           "Content-Type": "application/json",
         },
       }
