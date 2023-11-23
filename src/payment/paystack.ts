@@ -265,6 +265,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
+      console.log(owner);
       socket.emit(`chile`, owner);
     }
 
@@ -291,6 +292,8 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
           balance: wallletAmount + transactionAmount,
         },
       });
+
+      console.log(owner)
 
       socket.emit(`chile`, owner);
     }

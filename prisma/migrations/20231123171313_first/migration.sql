@@ -77,8 +77,8 @@ CREATE TABLE "Transaction" (
     "date" TEXT,
     "status" TEXT,
     "ref" TEXT,
-    "client_id" TEXT,
-    "businessOwner_id" TEXT,
+    "client_id" TEXT NOT NULL,
+    "businessOwner_id" TEXT NOT NULL,
     "invoice_id" TEXT,
 
     CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
@@ -139,10 +139,10 @@ ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_holder_id_fkey" FOREIGN KEY ("holder
 ALTER TABLE "Client" ADD CONSTRAINT "Client_businessOwner_id_fkey" FOREIGN KEY ("businessOwner_id") REFERENCES "BusinessOwner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "Client"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_businessOwner_id_fkey" FOREIGN KEY ("businessOwner_id") REFERENCES "BusinessOwner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_businessOwner_id_fkey" FOREIGN KEY ("businessOwner_id") REFERENCES "BusinessOwner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_invoice_id_fkey" FOREIGN KEY ("invoice_id") REFERENCES "Invoice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
