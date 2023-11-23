@@ -164,7 +164,7 @@ export const verifyPayment = expressAsyncHandler(
             status: verifyPayment.data.status,
           },
         });
-        console.log(verifyPayment);
+        
 
         // updateTransactionStatus = await prisma.transaction.update({
         //   where: { ref: reference },
@@ -197,6 +197,8 @@ export const verifyPayment = expressAsyncHandler(
       });
       const wallletAmount = Number(owner?.wallet?.balance);
       const transactionAmount = Number(verifyPayment?.data?.amount);
+
+  
         socket.emit(`${owner?.id}`, owner);
 
       if (invoice.status == "success") {
@@ -265,8 +267,9 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
-      console.log(owner);
-      socket.emit(`chile`, owner);
+ 
+              socket.emit(`${owner?.id}`, owner);
+
     }
 
     if (
@@ -293,9 +296,9 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
-      console.log(owner)
+   
+             socket.emit(`${owner?.id}`, owner);
 
-      socket.emit(`chile`, owner);
     }
 
     // Do something with event

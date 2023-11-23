@@ -28,8 +28,6 @@ export const createBusinessOwner = expressAsyncHandler(
       throwError("Invalid inputs", StatusCodes.BAD_REQUEST, true);
     }
 
-   
-
     try {
       const findOwner = await prisma.businessOwner.findUnique({
         where: {
@@ -182,12 +180,11 @@ export const loginUser = expressAsyncHandler(async (req, res, next) => {
       },
       include: {
         wallet: true,
-        business:true,
+        business: true,
         client: {
           include: {
             invoice: true,
             transaction: true,
-            
           },
         },
       },
@@ -434,7 +431,6 @@ export const createClientProfile = expressAsyncHandler(
 
     const { email, name, phone, address } = req.body;
 
-
     const { authId } = req;
     try {
       const findUser = await prisma.client.findUnique({
@@ -450,8 +446,10 @@ export const createClientProfile = expressAsyncHandler(
           true
         );
       }
-      const clienExist =  await prisma.client.findUnique({where:{email:email}});
-      if(clienExist){
+      const clienExist = await prisma.client.findUnique({
+        where: { email: email },
+      });
+      if (clienExist) {
         throwError("Client already exist", StatusCodes.BAD_REQUEST, true);
       }
       const createClient = await prisma.client.create({
@@ -598,7 +596,7 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
         "identity_check",
         "document_check",
       ],
-      successUrl: `${process.env.base_url}/kyc?${email}+${password}+${authId}`,
+      successUrl: `${process.env.base_url}/verify_kyc?detail=${email}+${authId}`,
       cancelUrl: "https://www.yoursite.com/cancel",
       theme: "light",
     });
@@ -609,25 +607,26 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
   } catch (error) {}
 });
 export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
-  try {
-    const details = req.params.detail;
-    const ownersDetails = details.split("+");
-    const [email, password, id] = ownersDetails;
+  const details = req.query.detail;
+  const ownersDetails = details.split(" ");
+  const [email, id] = ownersDetails;
 
+  try {
     const owner = await prisma.businessOwner.findUnique({
       where: {
         id: id,
-        email: email,
+        email:email
       },
     });
+
+   
     if (!owner) {
       throwError("Invalid business owner", StatusCodes.BAD_REQUEST, true);
     }
-    await comparePassword(password, owner?.password as string);
 
     const updateBusinessOwner = await prisma.businessOwner.update({
       where: {
-        email,
+        email:owner?.email
       },
       data: {
         KYC: true,
