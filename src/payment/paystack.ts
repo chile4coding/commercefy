@@ -238,10 +238,9 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     // Retrieve the request's body
 
     const event = req.body;
-  console.log("this is getting here for the events  ======================= ")
+
   
-  let invoice;
-  let updateTransactionStatus;
+
   
   if (
     event.event === "charge.success" ||
@@ -252,17 +251,15 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
       console.log(event.data)
       const { reference, status, amount } = event.data;
-      console.log("this is getting here for the for the refences  ======================= ", reference)
-      console.log("this is getting here for the for the refences  ======================= ", status)
-      console.log("this is getting here for the for the refences  ======================= ", amount)
-      
-      invoice = await prisma.invoice.update({
+    
+   const    invoice = await prisma.invoice.update({
         where: { id: reference },
         data: {
           status: status,
         },
       });
 
+      console.log("this is getting here for the for the refences  ======================= ", invoice)
       // updateTransactionStatus = await prisma.transaction.update({
       //   where: { ref: reference },
       //   data: {
@@ -276,6 +273,10 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
       
+            console.log(
+              "this is getting here for the for the success or  ======================= "
+            );
+
       
       socket.emit(`${owner?.id}`, owner);
 
@@ -286,10 +287,12 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       event.event === "transfer.success"
     ) {
       const { reference, status, amount } = event.data;
-      const businessOwnerId = invoice?.businessOwner_id;
-      console.log("this is getting here for the for the success or  ======================= ")
+        const invoice = await prisma.invoice.findUnique({
+          where: { id: reference },
+        });
 
-      const clientId = invoice?.client_id;
+      const businessOwnerId = invoice?.businessOwner_id;
+ 
       const owner = await prisma.businessOwner.findUnique({
         where: { id: businessOwnerId as string },
         include: {
@@ -306,8 +309,18 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
+
+         const ownerN = await prisma.businessOwner.findUnique({
+           where: { id: businessOwnerId as string },
+           include: {
+             wallet: true,
+           },
+         });
+
+         console.log("this is the owner  o ",  ownerN)
+      
    
-             socket.emit(`${owner?.id}`, owner);
+             socket.emit(`${owner?.id}`, ownerN);
 
     }
 
