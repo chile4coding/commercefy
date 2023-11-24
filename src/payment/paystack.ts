@@ -379,15 +379,18 @@ export const iniateTransfer = expressAsyncHandler(
           },
         }
       );
-
-      const walletBalance = Number(owner?.wallet?.balance);
-      const details: any = response.data.data;
+ const details: any = response.data.data;
       const { status, amount: balance } = details;
+      const walletBalance = Number(owner?.wallet?.balance);
+      const Balance =   Number(balance)
+
+      const remainingBalance  = walletBalance - Balance
+     
       if (status === "success") {
         const walletUpdate = await prisma.wallet.update({
           where: { id: owner?.wallet?.id },
           data: {
-            balance: walletBalance - Number(balance),
+            balance: remainingBalance
           },
         });
       }
