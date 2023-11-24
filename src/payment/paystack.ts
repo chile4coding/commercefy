@@ -68,7 +68,6 @@ export const payBusinessOwner = expressAsyncHandler(
         authorization: `Bearer ${process.env.paystackAuthization}`,
       });
 
-
       const updateInvoice = await prisma.invoice.update({
         where: {
           id: invoiceNo,
@@ -157,22 +156,22 @@ export const verifyPayment = expressAsyncHandler(
           },
         });
 
-        const owner  = await prisma.businessOwner.findUnique({
+        const owner = await prisma.businessOwner.findUnique({
           where: { id: invoice?.businessOwner_id as string },
-          include:{wallet:true}
+          include: { wallet: true },
         });
 
-            const wallletAmount = Number(owner?.wallet?.balance);
-            const transactionAmount = Number(verifyPayment?.data?.amount) / 100;
+        // const wallletAmount = Number(owner?.wallet?.balance);
+        // const transactionAmount = Number(verifyPayment?.data?.amount) / 100;
 
-            if (invoice.status == "success") {
-              const walletUpdate = await prisma.wallet.update({
-                where: { id: owner?.wallet?.id },
-                data: {
-                  balance: wallletAmount + transactionAmount,
-                },
-              });
-            }
+        // if (invoice.status == "success") {
+        //   const walletUpdate = await prisma.wallet.update({
+        //     where: { id: owner?.wallet?.id },
+        //     data: {
+        //       balance: wallletAmount + transactionAmount,
+        //     },
+        //   });
+        // }
 
         // updateTransactionStatus = await prisma.transaction.update({
         //   where: { ref: reference },
@@ -209,7 +208,6 @@ export const verifyPayment = expressAsyncHandler(
           business: true,
         },
       });
-  
 
       const ownerN = await prisma.businessOwner.findUnique({
         where: { id: businessOwnerId as string },
@@ -225,12 +223,10 @@ export const verifyPayment = expressAsyncHandler(
       });
 
       socket.emit(`${ownerN?.id}`, owner);
-            socket.emit(`${ownerN?.id}invoicemessage`, {
-              notification: "New invoice",
-              invoice,
-            });
-         
-
+      socket.emit(`${ownerN?.id}invoicemessage`, {
+        notification: "New invoice",
+        invoice,
+      });
 
       res.status(StatusCodes.OK).json({
         message: "Payment verified successfully",
@@ -253,37 +249,31 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     .digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {
     // Retrieve the request's body
-    
 
     const event = req.body;
-    console.log("show me the event let me know ==", event)
+    console.log("show me the event let me know ==", event);
 
-    if (
-      event.event === "charge.success"
-    ) {
-     
+    if (event.event === "charge.success") {
       const { reference, status, amount } = event.data;
 
       const invoice = await prisma.invoice.update({
         where: { id: reference },
         data: {
           status: status,
-          
         },
       });
-            const owner = await prisma.businessOwner.findUnique({
-              where: { id: invoice.businessOwner_id as string },
-              include: {
-                wallet: true,
-                client: {
-                  include: {
-                    invoice: true,
-                  },
-                },
-                business: true,
-              },
-            });
-
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: invoice.businessOwner_id as string },
+        include: {
+          wallet: true,
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+          business: true,
+        },
+      });
 
       // const wallletAmount = Number(owner?.wallet?.balance);
       // const transactionAmount = Number(amount);
@@ -294,8 +284,20 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       //        balance: wallletAmount + transactionAmount,
       //      },
       //    });
-    
-       const ownerN = await prisma.businessOwner.findUnique({
+
+      const wallletAmount = Number(owner?.wallet?.balance);
+      const transactionAmount = Number(amount) / 100;
+
+      if (status == "success") {
+        const walletUpdate = await prisma.wallet.update({
+          where: { id: owner?.wallet?.id },
+          data: {
+            balance: wallletAmount + transactionAmount,
+          },
+        });
+      }
+
+      const ownerN = await prisma.businessOwner.findUnique({
         where: { id: owner?.id as string },
         include: {
           wallet: true,
@@ -309,19 +311,80 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       });
 
       socket.emit(`${ownerN?.id}`, ownerN);
-       socket.emit(`${ownerN?.id}invoicemessage`, invoice);
-       socket.emit(`${ownerN?.id}invoicemessage`, {notification:"New invoice",invoice});
-  
-  
-      }
+      socket.emit(`${ownerN?.id}invoicemessage`, invoice);
+      socket.emit(`${ownerN?.id}invoicemessage`, {
+        notification: "New invoice",
+        invoice,
+      });
     }
 
+    if (event.event === "transfer.success") {
+      const { reference, status, amount } = event.data;
+      const withdraw = await prisma.withdrawal.findUnique({
+        where: { refernece: reference },
+      });
+      const businessOwnerId = withdraw?.businessOwner_id;
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: businessOwnerId },
+        include: { wallet: true },
+      });
 
+      const walletBalance = Number(owner?.wallet?.balance);
+      const Balance = Number(amount) / 100;
 
-    // Do something with event
-  
+      const remainingBalance = walletBalance - Balance;
+
+      const walletUpdate = await prisma.wallet.update({
+        where: { id: owner?.wallet?.id },
+        data: {
+          balance: remainingBalance,
+        },
+      });
+
+      const ownerN = await prisma.businessOwner.findUnique({
+        where: { id: businessOwnerId },
+        include: { wallet: true },
+      });
+
+      socket.emit(`${ownerN?.id}transferNotification`, {
+        notification: "new Transfer",
+        walletUpdate,
+      });
+    }
+    if (
+      event.event === "transfer.failed" ||
+      event.event === "transfer.reversed"
+    ) {
+
+           const { reference, status, amount } = event.data;
+           const withdraw = await prisma.withdrawal.findUnique({
+             where: { refernece: reference },
+           });
+           const businessOwnerId = withdraw?.businessOwner_id;
+           const owner = await prisma.businessOwner.findUnique({
+             where: { id: businessOwnerId },
+             include: { wallet: true },
+           });
+
+         
+           const ownerN = await prisma.businessOwner.findUnique({
+             where: { id: businessOwnerId },
+             include: { wallet: true },
+           });
+
+           socket.emit(`${ownerN?.id}transferNotification`, {
+             notification: "new Transfer",
+             transfer:{
+               status,
+               amount,
+               reference
+             },
+           });
+    }
+  }
+
+  // Do something with event
 });
-
 
 export const getBankCode = expressAsyncHandler(async (req, res, next) => {
   try {
@@ -351,30 +414,30 @@ export const iniateTransfer = expressAsyncHandler(
         include: { wallet: true },
       });
 
-
-
       if (!owner) {
         throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
       }
-      if(!owner?.KYC){
-        throwError("Complete Your KYC", StatusCodes.BAD_REQUEST, true)
-
+      if (!owner?.KYC) {
+        throwError("Complete Your KYC", StatusCodes.BAD_REQUEST, true);
       }
-      if(!owner?.is_pin_enabled){
-        throwError("Enable your tansaction pin to make payment", StatusCodes.BAD_REQUEST)
+      if (!owner?.is_pin_enabled) {
+        throwError(
+          "Enable your tansaction pin to make payment",
+          StatusCodes.BAD_REQUEST
+        );
       }
-      if(owner?.pin !== pin){
-        throwError("Incorrect Your PIN", StatusCodes.BAD_REQUEST)
+      if (owner?.pin !== pin) {
+        throwError("Incorrect Your PIN", StatusCodes.BAD_REQUEST);
       }
-      if(Number(owner?.wallet?.balance)  <= amount){
-        throwError("Insufficient Balance", StatusCodes.BAD_REQUEST, true)
+      if (Number(owner?.wallet?.balance) <= amount) {
+        throwError("Insufficient Balance", StatusCodes.BAD_REQUEST, true);
       }
 
       const response = await axios.post(
         "https://api.paystack.co/transfer",
         {
           source: "balance",
-          amount: Number(amount) *100,
+          amount: Number(amount) * 100,
           recipient: recipient,
           reason: "Withdrawal",
         },
@@ -385,35 +448,50 @@ export const iniateTransfer = expressAsyncHandler(
           },
         }
       );
- const details: any = response.data.data;
-      const { status, amount: balance } = details;
-      const walletBalance = Number(owner?.wallet?.balance);
-      const Balance =   Number(balance)/100
+      const details: any = response.data.data;
+      const { status, amount: balance, reference } = details;
+      const withdral = await prisma.withdrawal.create({
+        data: {
+          refernece: reference,
+          businessOwner: { connect: { id: authId } },
+        },
+      });
 
-      const remainingBalance  = walletBalance - Balance
-     
-      if (status === "success") {
-        const walletUpdate = await prisma.wallet.update({
-          where: { id: owner?.wallet?.id },
-          data: {
-            balance: remainingBalance
-          },
-        });
-      }
+      // const walletBalance = Number(owner?.wallet?.balance);
+      // const Balance =   Number(balance)/100
+
+      // const remainingBalance  = walletBalance - Balance
+
+      // if (status === "success") {
+      //   const walletUpdate = await prisma.wallet.update({
+      //     where: { id: owner?.wallet?.id },
+      //     data: {
+      //       balance: remainingBalance
+      //     },
+      //   });
+      // }
 
       const ownerN = await prisma.businessOwner.findUnique({
         where: { id: authId },
-        include: { wallet: true,
+        include: {
+          wallet: true,
           client: {
             include: {
               invoice: true,
             },
           },
           business: true,
-        
         },
       });
-      socket.emit(`${ownerN?.id}`, owner);
+         socket.emit(`${ownerN?.id}transferNotification`, {
+           notification: "new Transfer",
+           transfer:{
+             status,
+             amount:Number(balance) /100,
+             reference
+           },
+           
+         });
 
       res.status(StatusCodes.OK).json({
         ownerN,

@@ -600,7 +600,7 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
         "document_check",
       ],
       successUrl: `${process.env.base_url}/verify_kyc?detail=${email}+${authId}`,
-      cancelUrl: "https://www.yoursite.com/cancel",
+      cancelUrl: "https://commercefy.vercel.app/dashboard.html",
       theme: "light",
     });
 
@@ -641,7 +641,7 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
       throwError("Server error", StatusCodes.BAD_REQUEST, true);
     }
 
-    res.redirect(`http://localhost:3000/kycsuccess`);
+    res.redirect(`https://commercefy.vercel.app/dashboard.html`);
   } catch (error) {
     next(error);
   }

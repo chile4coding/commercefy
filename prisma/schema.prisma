@@ -39,6 +39,7 @@ verify_otp Boolean @default(false)
                 KYC Boolean @default(false)
 
                 business BusinessProfile[]
+                withdrawal Withdrawal[]
    
 }
 
@@ -97,6 +98,14 @@ model Transaction{
   businessOwner_id String
   invoice Invoice?  @relation(fields: [invoice_id], references: [id])
   invoice_id String ? @unique
+
+}
+
+model Withdrawal{
+   id String @id @default(uuid())
+   refernece String? @unique
+    businessOwner BusinessOwner  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id String
 
 }
 
