@@ -256,6 +256,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
     
 
     const event = req.body;
+    console.log("show me the event let me know ==", event)
 
     if (
       event.event === "charge.success"
