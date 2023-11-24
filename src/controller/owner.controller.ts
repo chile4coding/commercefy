@@ -664,6 +664,8 @@ export const getOwner = expressAsyncHandler(async (req: any, res, next) => {
     const owner = await prisma.businessOwner.findUnique({
       where: { id: authId },
       include: {
+        wallet:true,
+        business:true,
         client: {
           include: {
             invoice: true,
