@@ -163,7 +163,7 @@ export const verifyPayment = expressAsyncHandler(
         });
 
             const wallletAmount = Number(owner?.wallet?.balance);
-            const transactionAmount = Number(verifyPayment?.data?.amount);
+            const transactionAmount = Number(verifyPayment?.data?.amount) / 100;
 
             if (invoice.status == "success") {
               const walletUpdate = await prisma.wallet.update({
