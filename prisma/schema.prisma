@@ -104,6 +104,8 @@ model Transaction{
 model Withdrawal{
    id String @id @default(uuid())
    refernece String? @unique
+   status String?
+   amount Float?
     businessOwner BusinessOwner  @relation(fields: [businessOwner_id], references: [id])
   businessOwner_id String
 
