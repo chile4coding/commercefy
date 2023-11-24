@@ -229,6 +229,7 @@ export const updateProfile = expressAsyncHandler(
         street,
         state,
         postalCode,
+        occupation,
       } = req.body;
 
       const findUser = await prisma.businessOwner.findUnique({
@@ -253,14 +254,7 @@ export const updateProfile = expressAsyncHandler(
           street,
           state,
           postalCode,
-        },
-        select: {
-          firstName: true,
-          lastName: true,
-          phone: true,
-          email: true,
-          avatar: true,
-          accountNo: true,
+          occupation,
         },
       });
       if (!updateUser) {
