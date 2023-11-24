@@ -408,14 +408,6 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
         pin,
         is_pin_enabled:true
       },
-      select: {
-        firstName: true,
-        lastName: true,
-        phone: true,
-        email: true,
-        avatar: true,
-        accountNo: true,
-      },
     });
 
     if (!updatePics) {

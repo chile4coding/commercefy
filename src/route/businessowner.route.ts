@@ -12,6 +12,7 @@ import {
   loginUser,
   requestOtp,
   updateAvatar,
+  updateClientProfile,
   updateKYC,
   updateProfile,
   verifyKYC,
@@ -104,7 +105,7 @@ router.patch(
     body("phone").notEmpty().withMessage("Invalid phone"),
     body("address").notEmpty().withMessage("Invalid  address"),
   ],
-  updateProfile
+  updateClientProfile
 );
 router.patch(
   "/update_client_picture",
@@ -113,7 +114,7 @@ router.patch(
     body("avatar").isEmail().notEmpty().withMessage("Invalid email"),
     body("clientId").notEmpty().withMessage("Invalid  client id"),
   ],
-  updateProfile
+  updateClientProfile
 );
 
 router.post(
