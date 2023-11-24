@@ -5,6 +5,10 @@ import {
   createBusinessOwner,
   createClientProfile,
   enablePin,
+  getClients,
+  getOwner,
+  getSpecificClientInvoice,
+  getSpecificInvoice,
   loginUser,
   requestOtp,
   updateAvatar,
@@ -128,4 +132,8 @@ router.post("/update_business", auth, createBusiness);
 router.get("/verify_kyc", updateKYC);
 
 router.post("/create_business", auth, createBusiness)
+router.get("/get_business_owner", auth, getOwner)
+router.get("/get_busines_owner_client", auth, getClients)
+router.get("/get_specific_client_invoice", auth, getSpecificClientInvoice)
+router.get("/get_specific_invoice", auth, getSpecificInvoice)
 export const businessOwner = router;

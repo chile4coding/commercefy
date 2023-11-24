@@ -26,4 +26,5 @@ router.get("/verify_payment", verifyPayment);
 router.get("/get_banks", auth,  getBankCode)
 router.post("/withdraw", auth,  iniateTransfer)
 
+
 export const paystackRoutes = router;

@@ -1,7 +1,7 @@
 {
-  "name": "paymybusiness",
+  "name": "commercefy",
   "version": "1.0.0",
-  "description": "Fashion store",
+  "description": "Small Businness Payment Platform",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -17,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chile4coding/stewart_backend.git"
+    "url": "git+https://github.com/chile4coding/commercefy.git"
   },
   "author": "Chile Omereji",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/chile4coding/stewart_backend.git/issues"
+    "url": "https://github.com/chile4coding/commercefy.git/issues"
   },
-  "homepage": "https://github.com/chile4coding/stewart_backend.git#readme",
+  "homepage": "https://github.com/chile4coding/commercefy.git#readme",
   "dependencies": {
     "@complycube/api": "^1.1.9",
     "@prisma/client": "^5.3.0",

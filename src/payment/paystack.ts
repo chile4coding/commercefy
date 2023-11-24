@@ -35,9 +35,9 @@ export const payBusinessOwner = expressAsyncHandler(
           id: authId,
         },
       });
-      // if (!owner?.KYC) {
-      //   throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
-      // }
+      if (!owner?.KYC) {
+        throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+      }
       const invoiceRef = await prisma.invoice.update({
         where: {
           id: invoiceNo,
@@ -67,12 +67,6 @@ export const payBusinessOwner = expressAsyncHandler(
         authorization: `Bearer ${process.env.paystackAuthization}`,
       });
 
-      console.log(initPayment);
-
-      // if (!initPayment.data.authorization_urll) {
-      //   throwError("Error occured", StatusCodes.BAD_REQUEST, true);
-      // }
-      //  register the status of this to the transaction
 
       const updateInvoice = await prisma.invoice.update({
         where: {
@@ -124,10 +118,9 @@ export const generateInvoice = expressAsyncHandler(
         where: { id: authId },
       });
 
-      console.log(owner);
-      // if (!owner?.KYC) {
-      //   throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
-      // }
+      if (!owner?.KYC) {
+        throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+      }
       const createInvoice = await prisma.invoice.create({
         data: {
           status: "pending",
@@ -224,6 +217,12 @@ export const verifyPayment = expressAsyncHandler(
       });
 
       socket.emit(`${ownerN?.id}`, owner);
+            socket.emit(`${ownerN?.id}invoicemessage`, {
+              notification: "New invoice",
+              invoice,
+            });
+         
+
 
       res.status(StatusCodes.OK).json({
         message: "Payment verified successfully",
@@ -301,7 +300,14 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       });
 
       socket.emit(`${ownerN?.id}`, ownerN);
-    }
+       socket.emit(`${ownerN?.id}invoicemessage`, invoice);
+       socket.emit(`${ownerN?.id}invoicemessage`, {notification:"New invoice",invoice});
+     socket.emit(`${ownerN?.id}walletemessage`, {
+       notification: "Transaction alert",
+       walletUpdate,
+     });
+  
+      }
     }
 
 
@@ -331,7 +337,7 @@ export const getBankCode = expressAsyncHandler(async (req, res, next) => {
 
 export const iniateTransfer = expressAsyncHandler(
   async (req: any, res, next) => {
-    const { amount, recipient } = req.body;
+    const { amount, recipient, pin } = req.body;
     const { authId } = req;
     try {
       const owner = await prisma.businessOwner.findUnique({
@@ -341,6 +347,16 @@ export const iniateTransfer = expressAsyncHandler(
 
       if (!owner) {
         throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
+      }
+      if(!owner?.KYC){
+        throwError("Complete Your KYC", StatusCodes.BAD_REQUEST, true)
+
+      }
+      if(!owner?.is_pin_enabled){
+        throwError("Enable your tansaction pin to make payment", StatusCodes.BAD_REQUEST)
+      }
+      if(owner?.pin !== pin){
+        throwError("Incorrect Your PIN", StatusCodes.BAD_REQUEST)
       }
 
       const response = await axios.post(
