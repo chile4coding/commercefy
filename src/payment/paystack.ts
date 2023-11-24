@@ -157,6 +157,23 @@ export const verifyPayment = expressAsyncHandler(
           },
         });
 
+        const owner  = await prisma.businessOwner.findUnique({
+          where: { id: invoice?.businessOwner_id as string },
+          include:{wallet:true}
+        });
+
+            const wallletAmount = Number(owner?.wallet?.balance);
+            const transactionAmount = Number(verifyPayment?.data?.amount);
+
+            if (invoice.status == "success") {
+              const walletUpdate = await prisma.wallet.update({
+                where: { id: owner?.wallet?.id },
+                data: {
+                  balance: wallletAmount + transactionAmount,
+                },
+              });
+            }
+
         // updateTransactionStatus = await prisma.transaction.update({
         //   where: { ref: reference },
         //   data: {
@@ -192,17 +209,7 @@ export const verifyPayment = expressAsyncHandler(
           business: true,
         },
       });
-      const wallletAmount = Number(owner?.wallet?.balance);
-      const transactionAmount = Number(verifyPayment?.data?.amount);
-
-      if (invoice.status == "success") {
-        const walletUpdate = await prisma.wallet.update({
-          where: { id: owner?.wallet?.id },
-          data: {
-            balance: wallletAmount + transactionAmount,
-          },
-        });
-      }
+  
 
       const ownerN = await prisma.businessOwner.findUnique({
         where: { id: businessOwnerId as string },
@@ -277,15 +284,15 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
             });
 
 
-      const wallletAmount = Number(owner?.wallet?.balance);
-      const transactionAmount = Number(amount);
+      // const wallletAmount = Number(owner?.wallet?.balance);
+      // const transactionAmount = Number(amount);
 
-         const walletUpdate = await prisma.wallet.update({
-           where: { id: owner?.wallet?.id },
-           data: {
-             balance: wallletAmount + transactionAmount,
-           },
-         });
+      //    const walletUpdate = await prisma.wallet.update({
+      //      where: { id: owner?.wallet?.id },
+      //      data: {
+      //        balance: wallletAmount + transactionAmount,
+      //      },
+      //    });
     
        const ownerN = await prisma.businessOwner.findUnique({
         where: { id: owner?.id as string },
@@ -303,10 +310,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       socket.emit(`${ownerN?.id}`, ownerN);
        socket.emit(`${ownerN?.id}invoicemessage`, invoice);
        socket.emit(`${ownerN?.id}invoicemessage`, {notification:"New invoice",invoice});
-     socket.emit(`${ownerN?.id}walletemessage`, {
-       notification: "Transaction alert",
-       walletUpdate,
-     });
+  
   
       }
     }
