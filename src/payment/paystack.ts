@@ -387,7 +387,7 @@ export const iniateTransfer = expressAsyncHandler(
  const details: any = response.data.data;
       const { status, amount: balance } = details;
       const walletBalance = Number(owner?.wallet?.balance);
-      const Balance =   Number(balance)
+      const Balance =   Number(balance)/100
 
       const remainingBalance  = walletBalance - Balance
      
