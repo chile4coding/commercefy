@@ -162,17 +162,17 @@ export const verifyPayment = expressAsyncHandler(
           include:{wallet:true}
         });
 
-            const wallletAmount = Number(owner?.wallet?.balance);
-            const transactionAmount = Number(verifyPayment?.data?.amount);
+            // const wallletAmount = Number(owner?.wallet?.balance);
+            // const transactionAmount = Number(verifyPayment?.data?.amount);
 
-            if (invoice.status == "success") {
-              const walletUpdate = await prisma.wallet.update({
-                where: { id: owner?.wallet?.id },
-                data: {
-                  balance: wallletAmount + transactionAmount,
-                },
-              });
-            }
+            // if (invoice.status == "success") {
+            //   const walletUpdate = await prisma.wallet.update({
+            //     where: { id: owner?.wallet?.id },
+            //     data: {
+            //       balance: wallletAmount + transactionAmount,
+            //     },
+            //   });
+            // }
 
         // updateTransactionStatus = await prisma.transaction.update({
         //   where: { ref: reference },
@@ -284,15 +284,15 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
             });
 
 
-      // const wallletAmount = Number(owner?.wallet?.balance);
-      // const transactionAmount = Number(amount);
+      const wallletAmount = Number(owner?.wallet?.balance);
+      const transactionAmount = Number(amount);
 
-      //    const walletUpdate = await prisma.wallet.update({
-      //      where: { id: owner?.wallet?.id },
-      //      data: {
-      //        balance: wallletAmount + transactionAmount,
-      //      },
-      //    });
+         const walletUpdate = await prisma.wallet.update({
+           where: { id: owner?.wallet?.id },
+           data: {
+             balance: wallletAmount + transactionAmount,
+           },
+         });
     
        const ownerN = await prisma.businessOwner.findUnique({
         where: { id: owner?.id as string },
@@ -350,6 +350,8 @@ export const iniateTransfer = expressAsyncHandler(
         include: { wallet: true },
       });
 
+
+
       if (!owner) {
         throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
       }
@@ -362,6 +364,9 @@ export const iniateTransfer = expressAsyncHandler(
       }
       if(owner?.pin !== pin){
         throwError("Incorrect Your PIN", StatusCodes.BAD_REQUEST)
+      }
+      if(Number(owner?.wallet?.balance)  <= amount){
+        throwError("Insufficient Balance", StatusCodes.BAD_REQUEST, true)
       }
 
       const response = await axios.post(
