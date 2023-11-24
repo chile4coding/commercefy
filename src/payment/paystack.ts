@@ -49,6 +49,7 @@ export const payBusinessOwner = expressAsyncHandler(
           address,
           subTotal,
           discount,
+          name,
           tax,
           date: `${new Date().toLocaleDateString("en-UK")}`,
           status: "pending",
