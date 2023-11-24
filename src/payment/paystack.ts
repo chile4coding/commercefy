@@ -322,7 +322,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       const { reference, status, amount } = event.data;
       const withdraw = await prisma.withdrawal.update({
         where: { refernece: reference },
-        data:{status:status, amount: Number(amount)}
+        data:{status:status,}
       });
       const businessOwnerId = withdraw?.businessOwner_id;
       // const owner = await prisma.businessOwner.findUnique({
@@ -344,7 +344,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       const { reference, status, amount } = event.data;
       const withdraw = await prisma.withdrawal.update({
         where: { refernece: reference },
-        data: { status: status, amount: Number(amount) },
+        data: { status: status, },
       });
       const businessOwnerId = withdraw?.businessOwner_id;
       // const owner = await prisma.businessOwner.findUnique({
