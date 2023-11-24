@@ -410,6 +410,7 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
       where: { id: authId },
       data: {
         pin,
+        is_pin_enabled:true
       },
       select: {
         firstName: true,
