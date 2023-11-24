@@ -373,7 +373,7 @@ export const iniateTransfer = expressAsyncHandler(
         "https://api.paystack.co/transfer",
         {
           source: "balance",
-          amount: Number(amount),
+          amount: Number(amount) *100,
           recipient: recipient,
           reason: "Withdrawal",
         },
