@@ -19,12 +19,13 @@ export const payBusinessOwner = expressAsyncHandler(
       email,
       amount,
       name,
-      invoiceNo,
       item,
       phone,
       address,
       subTotal,
       discount,
+      clientId,
+      dateDue,
       tax,
     } = req.body;
     const { authId } = req;
@@ -38,10 +39,7 @@ export const payBusinessOwner = expressAsyncHandler(
       if (!owner?.KYC) {
         throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
       }
-      const invoiceRef = await prisma.invoice.update({
-        where: {
-          id: invoiceNo,
-        },
+      const invoiceRef = await prisma.invoice.create({
         data: {
           items: item,
           amountPaid: Number(amount),
@@ -54,6 +52,9 @@ export const payBusinessOwner = expressAsyncHandler(
           date: `${new Date().toLocaleDateString("en-UK")}`,
           status: "pending",
           email,
+          client: { connect: { id: clientId } },
+          businessOwner: { connect: { id: authId } },
+         dateDue :`${dateDue}`
         },
       });
       if (!invoiceRef) {
@@ -70,7 +71,7 @@ export const payBusinessOwner = expressAsyncHandler(
 
       const updateInvoice = await prisma.invoice.update({
         where: {
-          id: invoiceNo,
+          id: invoiceRef?.id,
         },
         data: {
           paymentLink: initPayment?.data?.authorization_url,

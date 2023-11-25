@@ -123,7 +123,7 @@ model Invoice{
   subTotal String?
   discount String?
   tax String?
-
+dateDue String?
   client Client ? @relation(fields: [client_id], references: [id])
   client_id String ?
   businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
