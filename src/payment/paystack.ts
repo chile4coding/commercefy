@@ -92,7 +92,7 @@ export const payBusinessOwner = expressAsyncHandler(
       const transaction = await prisma.businessTransactions.create({
         data: {
           name,
-          amount: Number(amount) / 100,
+          amount: Number(amount) ,
           businessOwner: { connect: { id: authId } },
           type: "credit",
           ref: invoiceRef.id,
@@ -486,7 +486,7 @@ export const iniateTransfer = expressAsyncHandler(
       const transaction = await prisma.businessTransactions.create({
         data: {
           name,
-          amount: Number(amount) / 100,
+          amount: Number(amount) ,
           businessOwner: { connect: { id: authId } },
           type: "withdrawal",
           ref: reference,
