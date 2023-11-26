@@ -100,6 +100,7 @@ export const payBusinessOwner = expressAsyncHandler(
       res.status(StatusCodes.OK).json({
         message: "Payment initialized",
         initPayment,
+        updateInvoice,
       });
     } catch (error) {
       next(error);
