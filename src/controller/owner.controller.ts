@@ -780,3 +780,79 @@ export const getSpecificInvoice = expressAsyncHandler(
     }
   }
 );
+export const getInvoices = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+ 
+    try {
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: authId },
+        include: {
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+        },
+      });
+
+      if (!owner) {
+        throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
+      }
+      if(!owner?.KYC){
+        throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
+
+      }
+
+      const invoices = await prisma.invoice.findMany({
+        where: {
+      businessOwner_id:authId
+        },
+      });
+      res.status(StatusCodes.OK).json({
+        message: " invoices fetched successfully",
+        invoices,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+export const getWithdrawals = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+ 
+    try {
+      const owner = await prisma.businessOwner.findUnique({
+        where: { id: authId },
+        include: {
+          client: {
+            include: {
+              invoice: true,
+            },
+          },
+        },
+      });
+
+      if (!owner) {
+        throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
+      }
+      if(!owner?.KYC){
+        throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
+
+      }
+
+      const withdraw = await prisma.withdrawal.findMany({
+        where: {
+      businessOwner_id:authId
+        },
+      });
+      res.status(StatusCodes.OK).json({
+        message: " invoices fetched successfully",
+        withdraw
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);

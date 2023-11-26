@@ -6,9 +6,11 @@ import {
   createClientProfile,
   enablePin,
   getClients,
+  getInvoices,
   getOwner,
   getSpecificClientInvoice,
   getSpecificInvoice,
+  getWithdrawals,
   loginUser,
   requestOtp,
   updateAvatar,
@@ -137,4 +139,6 @@ router.get("/get_business_owner", auth, getOwner)
 router.get("/get_busines_owner_client", auth, getClients)
 router.get("/get_specific_client_invoice", auth, getSpecificClientInvoice)
 router.get("/get_specific_invoice", auth, getSpecificInvoice)
+router.get("/get_invoices", auth, getInvoices)
+router.get("/get_withdrawl", auth, getWithdrawals)
 export const businessOwner = router;
