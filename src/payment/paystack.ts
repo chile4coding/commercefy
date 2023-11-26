@@ -36,6 +36,8 @@ export const payBusinessOwner = expressAsyncHandler(
           id: authId,
         },
       });
+
+      console.log("========================== ", owner)
       if (!owner?.KYC) {
         throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
       }
@@ -57,6 +59,8 @@ export const payBusinessOwner = expressAsyncHandler(
          dateDue :`${dateDue}`
         },
       });
+
+      console.log("===========   thi sis tithe iinvoice ",  invoiceRef)
       if (!invoiceRef) {
         throwError("Error occured", StatusCodes.BAD_REQUEST, true);
       }
@@ -68,6 +72,9 @@ export const payBusinessOwner = expressAsyncHandler(
         callback_url: `${process.env.base_url}/verify_payment`,
         authorization: `Bearer ${process.env.paystackAuthization}`,
       });
+
+
+      console.log("===========   this is the initial payment ",  initPayment)
 
       const updateInvoice = await prisma.invoice.update({
         where: {
@@ -82,6 +89,8 @@ export const payBusinessOwner = expressAsyncHandler(
      <div> <a href="${initPayment.data.authorization_url}" style=" text-decoration: none; cursor: pointer; background-color: #00041C; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Pay Now</a> </div>
       `;
 
+
+      console.log("====== this is hthe ======== ",  updateInvoice)
       const subject = "Invoice Payment";
 
       await sendEmail(content, email, subject);
