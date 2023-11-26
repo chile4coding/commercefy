@@ -10,6 +10,7 @@ dotenv.config();
 import { verify } from "crypto";
 import axios from "axios";
 import { socket } from "../server/server";
+import auth from "../middleware/auth";
 
 const paystack = Paystack(process.env.paystackAuthization as string);
 
@@ -111,6 +112,18 @@ export const payBusinessOwner = expressAsyncHandler(
       //     date: `${new Date().toLocaleDateString("en-UK")}`,
       //   },
       // });
+
+         socket.emit(`${authId}`, owner);
+         socket.emit(`${auth}invoicemessage`, {
+           notification: `New Invoice link generated  link: ${initPayment.data.authorization_url}`,
+           
+         });
+         socket.emit(`${auth}transferNotification`, {
+           notification: `New transaction: ${transaction.status} ₦${
+             transaction.amount 
+           }  ${new Date().toLocaleDateString("en-UK")} type: ${transaction.type}`,
+           transaction,
+         });
 
       res.status(StatusCodes.OK).json({
         message: "Payment initialized",
@@ -249,11 +262,15 @@ export const verifyPayment = expressAsyncHandler(
 
       socket.emit(`${ownerN?.id}`, owner);
       socket.emit(`${ownerN?.id}invoicemessage`, {
-        notification: "New invoice",
+        notification: `New invoice paid for  amount: ₦${transaction.amount} ${new Date().toLocaleDateString(
+          "en-UK"
+        )} status: ${transaction.status}`,
         invoice,
       });
          socket.emit(`${ownerN?.id}transferNotification`, {
-           notification: "new Transfer",
+           notification: `New withdrawal  status: ${transaction.status} ₦${transaction.amount}  ${new Date().toLocaleDateString(
+             "en-UK"
+           )}`,
            transaction,
          });
 
@@ -311,27 +328,6 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
          },
        });
 
-      // const wallletAmount = Number(owner?.wallet?.balance);
-      // const transactionAmount = Number(amount);
-
-      //    const walletUpdate = await prisma.wallet.update({
-      //      where: { id: owner?.wallet?.id },
-      //      data: {
-      //        balance: wallletAmount + transactionAmount,
-      //      },
-      //    });
-
-      // const wallletAmount = Number(owner?.wallet?.balance);
-      // const transactionAmount = Number(amount) / 100;
-
-      // if (status == "success") {
-      //   const walletUpdate = await prisma.wallet.update({
-      //     where: { id: owner?.wallet?.id },
-      //     data: {
-      //       balance: wallletAmount + transactionAmount,
-      //     },
-      //   });
-      // }
 
       const ownerN = await prisma.businessOwner.findUnique({
         where: { id: owner?.id as string },
@@ -347,9 +343,8 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       });
 
       socket.emit(`${ownerN?.id}`, ownerN);
-      socket.emit(`${ownerN?.id}invoicemessage`, invoice);
       socket.emit(`${ownerN?.id}invoicemessage`, {
-        notification: "New invoice",
+        notification: `New invoice  status ${invoice.status} ${new Date().toLocaleDateString("en-UK")}`,
         invoice,
       });
     }
@@ -374,7 +369,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         });
 
       socket.emit(`${businessOwnerId}transferNotification`, {
-        notification: "new Transfer",
+        notification: `New ${transaction.type} transaction  amount ${amount} ${new Date().toLocaleDateString("en-UK")} status: ${transaction.status}`,
         transaction,
       });
 
@@ -401,7 +396,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
    },
  });
       socket.emit(`${businessOwnerId}transferNotification`, {
-        notification: "new Transfer",
+        notification: `New ${transaction.type} amount: ₦${amount}  ${new Date().toLocaleDateString("en-UK")}`,
         transaction,
       });
     }
@@ -521,7 +516,9 @@ export const iniateTransfer = expressAsyncHandler(
         },
       });
       socket.emit(`${ownerN?.id}transferNotification`, {
-        notification: "new Transfer",
+        notification: `New withdrawal amount: ₦${amount}  ${new Date().toLocaleDateString(
+          "en-UK"
+        )}`,
         withdral,
       });
 
