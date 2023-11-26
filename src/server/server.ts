@@ -3,7 +3,11 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 export const app = express();
 export const expressServer = createServer(app);
-const io = new Server(expressServer);
+const io = new Server(expressServer, {
+  cors: {
+    origin: "*",
+  },
+});
 let socketEvent: any;
 export const socket = io;
 export function SocketServer() {
