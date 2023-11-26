@@ -490,7 +490,7 @@ export const iniateTransfer = expressAsyncHandler(
         },
       });
       const walletBalance = Number(owner?.wallet?.balance);
-      const Balance = Number(balance) / 100;
+      const Balance = Number(balance) / 10;
 
       const remainingBalance = walletBalance - Balance;
 
