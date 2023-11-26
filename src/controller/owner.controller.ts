@@ -655,6 +655,7 @@ export const getOwner = expressAsyncHandler(async (req: any, res, next) => {
       include: {
         wallet:true,
         business:true,
+        businessTransactions:true,
         client: {
           include: {
             invoice: true,

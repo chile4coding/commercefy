@@ -40,6 +40,7 @@ verify_otp Boolean @default(false)
 
                 business BusinessProfile[]
                 withdrawal Withdrawal[]
+                businessTransactions  BusinessTransactions[]
    
 }
 
@@ -85,6 +86,18 @@ model Client{
   invoice Invoice[]
 }
 
+model BusinessTransactions{
+  id String @id @default(uuid())
+  amount Float?
+  type String?
+  date String?
+  status String?
+  ref String ? @unique
+  name String
+  businessOwner BusinessOwner  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id String
+}
+
 model Transaction{
   id String @id @default(uuid())
   amount Float?
@@ -106,6 +119,8 @@ model Withdrawal{
    refernece String? @unique
    status String?
    amount Float?
+   date String?
+   bank String?
     businessOwner BusinessOwner  @relation(fields: [businessOwner_id], references: [id])
   businessOwner_id String
 

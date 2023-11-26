@@ -28,7 +28,7 @@ export const payBusinessOwner = expressAsyncHandler(
       dateDue,
       tax,
     } = req.body;
-    console.log("========================== ", req.body); 
+
     const { authId } = req;
 
     try {
@@ -56,11 +56,10 @@ export const payBusinessOwner = expressAsyncHandler(
           email,
           client: { connect: { id: clientId } },
           businessOwner: { connect: { id: authId } },
-         dateDue :`${dateDue}`
+          dateDue: `${dateDue}`,
         },
       });
 
-      console.log("===========   thi sis tithe iinvoice ",  invoiceRef)
       if (!invoiceRef) {
         throwError("Error occured", StatusCodes.BAD_REQUEST, true);
       }
@@ -72,9 +71,6 @@ export const payBusinessOwner = expressAsyncHandler(
         callback_url: `${process.env.base_url}/verify_payment`,
         authorization: `Bearer ${process.env.paystackAuthization}`,
       });
-
-
-      console.log("===========   this is the initial payment ",  initPayment)
 
       const updateInvoice = await prisma.invoice.update({
         where: {
@@ -89,11 +85,21 @@ export const payBusinessOwner = expressAsyncHandler(
      <div> <a href="${initPayment.data.authorization_url}" style=" text-decoration: none; cursor: pointer; background-color: #00041C; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Pay Now</a> </div>
       `;
 
-
-      console.log("====== this is hthe ======== ",  updateInvoice)
       const subject = "Invoice Payment";
 
       await sendEmail(content, email, subject);
+
+      const transaction = await prisma.businessTransactions.create({
+        data: {
+          name,
+          amount: Number(amount) / 100,
+          businessOwner: { connect: { id: authId } },
+          type: "credit",
+          ref: invoiceRef.id,
+          status: "pending",
+          date: `${new Date().toLocaleDateString("en-UK")}`,
+        },
+      });
       // const transactions = await prisma.transaction.create({
       //   data: {
       //     ref: invoiceRef.id as string,
@@ -205,6 +211,14 @@ export const verifyPayment = expressAsyncHandler(
         // });
       }
 
+      
+        const transaction = await prisma.businessTransactions.update({
+          where: { ref: reference },
+          data: {
+            status: verifyPayment.data.status,
+          },
+        });
+
       const businessOwnerId = invoice.businessOwner_id;
       const clientId = invoice.client_id;
       const owner = await prisma.businessOwner.findUnique({
@@ -238,6 +252,10 @@ export const verifyPayment = expressAsyncHandler(
         notification: "New invoice",
         invoice,
       });
+         socket.emit(`${ownerN?.id}transferNotification`, {
+           notification: "new Transfer",
+           transaction,
+         });
 
       res.status(StatusCodes.OK).json({
         message: "Payment verified successfully",
@@ -263,7 +281,6 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
 
     const event = req.body;
 
-
     if (event.event === "charge.success") {
       const { reference, status, amount } = event.data;
 
@@ -285,6 +302,14 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
           business: true,
         },
       });
+
+       const transaction = await prisma.businessTransactions.update({
+         where: { ref: reference },
+         data: {
+           status: status,
+           
+         },
+       });
 
       // const wallletAmount = Number(owner?.wallet?.balance);
       // const transactionAmount = Number(amount);
@@ -333,7 +358,7 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       const { reference, status, amount } = event.data;
       const withdraw = await prisma.withdrawal.update({
         where: { refernece: reference },
-        data:{status:status,}
+        data: { status: status },
       });
       const businessOwnerId = withdraw?.businessOwner_id;
       // const owner = await prisma.businessOwner.findUnique({
@@ -341,12 +366,19 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       //   include: { wallet: true },
       // });
 
-    
+        const transaction = await prisma.businessTransactions.update({
+          where: { ref: reference },
+          data: {
+            status: status,
+          },
+        });
 
       socket.emit(`${businessOwnerId}transferNotification`, {
         notification: "new Transfer",
-        withdraw,
+        transaction,
       });
+
+     
     }
     if (
       event.event === "transfer.failed" ||
@@ -355,17 +387,22 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
       const { reference, status, amount } = event.data;
       const withdraw = await prisma.withdrawal.update({
         where: { refernece: reference },
-        data: { status: status, },
+        data: { status: status },
       });
       const businessOwnerId = withdraw?.businessOwner_id;
       // const owner = await prisma.businessOwner.findUnique({
       //   where: { id: businessOwnerId },
       //   include: { wallet: true },
       // });
-
+ const transaction = await prisma.businessTransactions.update({
+   where: { ref: reference },
+   data: {
+     status: status,
+   },
+ });
       socket.emit(`${businessOwnerId}transferNotification`, {
         notification: "new Transfer",
-        withdraw,
+        transaction,
       });
     }
   }
@@ -393,7 +430,7 @@ export const getBankCode = expressAsyncHandler(async (req, res, next) => {
 
 export const iniateTransfer = expressAsyncHandler(
   async (req: any, res, next) => {
-    const { amount, recipient, pin } = req.body;
+    const { amount, recipient, pin, name } = req.body;
     const { authId } = req;
     try {
       const owner = await prisma.businessOwner.findUnique({
@@ -442,20 +479,31 @@ export const iniateTransfer = expressAsyncHandler(
           refernece: reference,
           businessOwner: { connect: { id: authId } },
           status,
-          amount: Number(balance)/100,
+          amount: Number(balance) / 100,
         },
       });
 
+      const transaction = await prisma.businessTransactions.create({
+        data: {
+          name,
+          amount: Number(amount) / 100,
+          businessOwner: { connect: { id: authId } },
+          type: "withdrawal",
+          ref: reference,
+          status: status,
+          date: `${new Date().toLocaleDateString("en-UK")}`,
+        },
+      });
       const walletBalance = Number(owner?.wallet?.balance);
-      const Balance =   Number(balance)/100
+      const Balance = Number(balance) / 100;
 
-      const remainingBalance  = walletBalance - Balance
+      const remainingBalance = walletBalance - Balance;
 
       if (status === "success") {
         const walletUpdate = await prisma.wallet.update({
           where: { id: owner?.wallet?.id },
           data: {
-            balance: remainingBalance
+            balance: remainingBalance,
           },
         });
       }
@@ -472,11 +520,10 @@ export const iniateTransfer = expressAsyncHandler(
           business: true,
         },
       });
-         socket.emit(`${ownerN?.id}transferNotification`, {
-           notification: "new Transfer",
-          withdral
-           
-         });
+      socket.emit(`${ownerN?.id}transferNotification`, {
+        notification: "new Transfer",
+        withdral,
+      });
 
       res.status(StatusCodes.OK).json({
         ownerN,
@@ -522,3 +569,34 @@ export const iniateTransfer = expressAsyncHandler(
 // });
 
 // next you will have to work on the KYC verification process
+
+
+export const getTransactions  =  expressAsyncHandler(async (req:any, res, next) => {  
+const  {authId} =  req
+
+
+try {
+  const owner  = await  prisma.businessOwner.findUnique({
+    where:{id:authId}
+  })
+
+  if(!owner){
+    throwError("invalid business owner", StatusCodes.BAD_REQUEST, true);
+  }
+
+  const transactions  = await  prisma.businessTransactions.findMany({ where:{
+    businessOwner_id: authId
+  }})
+  res.status(StatusCodes.OK).json({
+    message:"Transactions fetched successfully",
+    transactions
+  })
+  
+} catch (error) {
+
+  next(error)
+  
+}
+
+
+})
