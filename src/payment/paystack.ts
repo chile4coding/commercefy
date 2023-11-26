@@ -28,6 +28,7 @@ export const payBusinessOwner = expressAsyncHandler(
       dateDue,
       tax,
     } = req.body;
+    console.log("========================== ", req.body); 
     const { authId } = req;
 
     try {
@@ -37,7 +38,6 @@ export const payBusinessOwner = expressAsyncHandler(
         },
       });
 
-      console.log("========================== ", owner)
       if (!owner?.KYC) {
         throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
       }
