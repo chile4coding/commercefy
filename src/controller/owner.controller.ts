@@ -337,6 +337,16 @@ export const createBusiness = expressAsyncHandler(
       if (!business) {
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
+
+
+       socket.emit(`${authId}business`, {
+         notification: `New business  profile created`,
+         desc: {
+           time: new Date().getTime(),
+           timeStamp: new Date().toISOString(),
+           link: "/businessprofile",
+         },
+       });
       res.status(StatusCodes.OK).json({
         message: "Business updated successfully",
         business,
@@ -470,7 +480,14 @@ export const createClientProfile = expressAsyncHandler(
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
 
-            socket.emit(`${authId}`, {message: "New client added" , updateProfile});
+           socket.emit(`${authId}client`, {
+             notification: `New client  profile created`,
+             desc: {
+               time: new Date().getTime(),
+               timeStamp: new Date().toISOString(),
+               link: "/clients",
+             },
+           });
 
       res.status(StatusCodes.OK).json({
         message: "Client created successfully",
@@ -641,7 +658,16 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
       throwError("Server error", StatusCodes.BAD_REQUEST, true);
     }
 
-    res.redirect(`https://commercefy.vercel.app/dashboard.html`);
+        socket.emit(`${owner?.id}kyc`, {
+          notification: `Your KYC has been verified`,
+          desc: {
+            time: new Date().getTime(),
+            timeStamp: new Date().toISOString(),
+            link: "/dashboard",
+          },
+        });
+
+    res.redirect(`https://commecefy-chile4coding.vercel.app/dashboard`);
   } catch (error) {
     next(error);
   }

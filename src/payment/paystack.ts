@@ -113,16 +113,16 @@ export const payBusinessOwner = expressAsyncHandler(
       //   },
       // });
 
-         socket.emit(`${authId}`, owner);
-         socket.emit(`${auth}invoicemessage`, {
-           notification: `New Invoice link generated  link: ${initPayment.data.authorization_url}`,
-           
-         });
+
+   
+         
          socket.emit(`${auth}transferNotification`, {
-           notification: `New transaction: ${transaction.status} ₦${
-             transaction.amount 
-           }  ${new Date().toLocaleDateString("en-UK")} type: ${transaction.type}`,
-           transaction,
+           notification: `New ${transaction.type} transaction occurred `,
+           desc: {
+             time: new Date().getTime(),
+             timeStamp: new Date().toISOString(),
+             link: "/dashboard",
+           },
          });
 
       res.status(StatusCodes.OK).json({
@@ -260,18 +260,15 @@ export const verifyPayment = expressAsyncHandler(
         },
       });
 
-      socket.emit(`${ownerN?.id}`, owner);
-      socket.emit(`${ownerN?.id}invoicemessage`, {
-        notification: `New invoice paid for  amount: ₦${transaction.amount} ${new Date().toLocaleDateString(
-          "en-UK"
-        )} status: ${transaction.status}`,
-        invoice,
-      });
+   
+ 
          socket.emit(`${ownerN?.id}transferNotification`, {
-           notification: `New withdrawal  status: ${transaction.status} ₦${transaction.amount}  ${new Date().toLocaleDateString(
-             "en-UK"
-           )}`,
-           transaction,
+           notification: `New ${transaction.type} transaction verified `,
+           desc:{
+            time: new Date().getTime(),
+            timeStamp: new Date().toISOString(),
+            link:"/dashboard"
+           },
          });
 
       res.status(StatusCodes.OK).json({
@@ -342,11 +339,11 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
         },
       });
 
-      socket.emit(`${ownerN?.id}`, ownerN);
-      socket.emit(`${ownerN?.id}invoicemessage`, {
-        notification: `New invoice  status ${invoice.status} ${new Date().toLocaleDateString("en-UK")}`,
-        invoice,
-      });
+      // socket.emit(`${ownerN?.id}`, ownerN);
+      // socket.emit(`${ownerN?.id}invoicemessage`, {
+      //   notification: `New invoice  status ${invoice.status} ${new Date().toLocaleDateString("en-UK")}`,
+      //   invoice,
+      // });
     }
 
     if (event.event === "transfer.success") {
@@ -368,10 +365,10 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
           },
         });
 
-      socket.emit(`${businessOwnerId}transferNotification`, {
-        notification: `New ${transaction.type} transaction  amount ${amount} ${new Date().toLocaleDateString("en-UK")} status: ${transaction.status}`,
-        transaction,
-      });
+      // socket.emit(`${businessOwnerId}transferNotification`, {
+      //   notification: `New ${transaction.type} transaction  amount ${amount} ${new Date().toLocaleDateString("en-UK")} status: ${transaction.status}`,
+      //   transaction,
+      // });
 
      
     }
@@ -395,10 +392,10 @@ export const paystackEvents = expressAsyncHandler(async (req, res) => {
      status: status,
    },
  });
-      socket.emit(`${businessOwnerId}transferNotification`, {
-        notification: `New ${transaction.type} amount: ₦${amount}  ${new Date().toLocaleDateString("en-UK")}`,
-        transaction,
-      });
+      // socket.emit(`${businessOwnerId}transferNotification`, {
+      //   notification: `New ${transaction.type} amount: ₦${amount}  ${new Date().toLocaleDateString("en-UK")}`,
+      //   transaction,
+      // });
     }
   }
 
@@ -516,10 +513,12 @@ export const iniateTransfer = expressAsyncHandler(
         },
       });
       socket.emit(`${ownerN?.id}transferNotification`, {
-        notification: `New withdrawal amount: ₦${amount}  ${new Date().toLocaleDateString(
-          "en-UK"
-        )}`,
-        withdral,
+        notification: `New ${transaction.type} occurred `,
+       desc:{
+        time: new Date().getTime(),
+        timeStamp: new Date().toISOString(),
+        link:"/dashboard"
+       }
       });
 
       res.status(StatusCodes.OK).json({
