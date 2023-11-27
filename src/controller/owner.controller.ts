@@ -933,3 +933,21 @@ export const deleteNotification = expressAsyncHandler(
     }
   }
 );
+export const clearNotification = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+   
+
+    try {
+      const notification = await prisma.notifications.delete({
+        where: { id:authId },
+      });
+
+      res.status(StatusCodes.OK).json({
+        notification,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);

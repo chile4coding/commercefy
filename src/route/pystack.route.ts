@@ -10,7 +10,7 @@ import {
 } from "../payment/paystack";
 import { body } from "express-validator";
 import auth from "../middleware/auth";
-import { deleteNotification, getNotifications } from "../controller/owner.controller";
+import { clearNotification, deleteNotification, getNotifications } from "../controller/owner.controller";
 const router = Router();
 
 
@@ -30,5 +30,6 @@ router.post("/withdraw", auth,  iniateTransfer)
 router.post("/getTransactions", auth,  getTransactions)
 router.get("/get_notifications", auth,  getNotifications)
 router.delete("/get_notifications", auth,  deleteNotification)
+router.delete("/clear_notifications", auth, clearNotification);
 
 export const paystackRoutes = router;
