@@ -939,7 +939,7 @@ export const clearNotification = expressAsyncHandler(
    
 
     try {
-      const notification = await prisma.notifications.delete({
+      const notification = await prisma.notifications.deleteMany({
         where: { id:authId },
       });
 
