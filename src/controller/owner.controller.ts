@@ -940,7 +940,7 @@ export const clearNotification = expressAsyncHandler(
 
     try {
       const notification = await prisma.notifications.deleteMany({
-        where: { id:authId },
+        where: { businessOwner_id:authId },
       });
 
       res.status(StatusCodes.OK).json({
