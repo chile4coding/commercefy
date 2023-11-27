@@ -677,7 +677,6 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
       },
     });
 
-
     socket.emit(`${owner?.id}kyc`, {
       notification: `Your KYC has been verified`,
       desc: {
@@ -892,6 +891,24 @@ export const getWithdrawals = expressAsyncHandler(
       res.status(StatusCodes.OK).json({
         message: " invoices fetched successfully",
         withdraw,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+export const getNotifications = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+
+    try {
+      const notification = await prisma.notifications.findMany({
+        where: { businessOwner_id: authId },
+      });
+
+      res.status(StatusCodes.OK).json({
+        notification,
       });
     } catch (error) {
       next(error);
