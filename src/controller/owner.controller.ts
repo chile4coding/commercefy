@@ -617,7 +617,8 @@ export const verifyKYC = expressAsyncHandler(async (req: any, res, next) => {
         "document_check",
       ],
       successUrl: `${process.env.base_url}/verify_kyc?detail=${email}+${authId}`,
-      cancelUrl: "https://commercefy.vercel.app/dashboard.html",
+      cancelUrl:
+        "https://commecefy-3udesluvc-chile4coding.vercel.app/dashboard",
       theme: "light",
     });
 
@@ -667,7 +668,7 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
           },
         });
 
-    res.redirect(`https://commecefy-chile4coding.vercel.app/dashboard`);
+    res.redirect(`https://commecefy-3udesluvc-chile4coding.vercel.app/dashboard`);
   } catch (error) {
     next(error);
   }
