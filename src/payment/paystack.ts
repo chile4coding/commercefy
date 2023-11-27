@@ -117,7 +117,7 @@ export const payBusinessOwner = expressAsyncHandler(
    
          
          socket.emit(`${auth}transferNotification`, {
-           notification: `New ${transaction.type} transaction occurred `,
+           notification: `New ${transaction.type} invoice generated `,
            desc: {
              time: new Date().getTime(),
              timeStamp: new Date().toISOString(),
