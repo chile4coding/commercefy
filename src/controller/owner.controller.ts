@@ -915,3 +915,21 @@ export const getNotifications = expressAsyncHandler(
     }
   }
 );
+export const deleteNotification = expressAsyncHandler(
+  async (req: any, res, next) => {
+    const { authId } = req;
+    const id  =  req.body.note
+
+    try {
+      const notification = await prisma.notifications.delete({
+        where: { id:id },
+      });
+
+      res.status(StatusCodes.OK).json({
+        notification,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
