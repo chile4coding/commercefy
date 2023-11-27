@@ -230,7 +230,7 @@ export const updateProfile = expressAsyncHandler(
         state,
         postalCode,
         occupation,
-        city
+        city,
       } = req.body;
 
       const findUser = await prisma.businessOwner.findUnique({
@@ -256,7 +256,7 @@ export const updateProfile = expressAsyncHandler(
           state,
           postalCode,
           occupation,
-          city
+          city,
         },
       });
       if (!updateUser) {
@@ -338,15 +338,14 @@ export const createBusiness = expressAsyncHandler(
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
 
-
-       socket.emit(`${authId}business`, {
-         notification: `New business  profile created`,
-         desc: {
-           time: new Date().getTime(),
-           timeStamp: new Date().toISOString(),
-           link: "/businessprofile",
-         },
-       });
+      socket.emit(`${authId}business`, {
+        notification: `New business  profile created`,
+        desc: {
+          time: new Date().getTime(),
+          timeStamp: new Date().toISOString(),
+          link: "/businessprofile",
+        },
+      });
       res.status(StatusCodes.OK).json({
         message: "Business updated successfully",
         business,
@@ -398,15 +397,14 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
 
   const { authId } = req;
   const owner = await prisma.businessOwner.findUnique({
-
     where: {
       id: authId,
     },
   });
 
-      if (!owner?.KYC) {
-        throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
-      }
+  if (!owner?.KYC) {
+    throwError("Please complete your KYC", StatusCodes.BAD_REQUEST, true);
+  }
   const { pin } = req.body;
   if (pin.length !== 4) {
     throwError("Invalid pin", StatusCodes.BAD_REQUEST, true);
@@ -416,7 +414,7 @@ export const enablePin = expressAsyncHandler(async (req: any, res, next) => {
       where: { id: authId },
       data: {
         pin,
-        is_pin_enabled:true
+        is_pin_enabled: true,
       },
     });
 
@@ -479,15 +477,26 @@ export const createClientProfile = expressAsyncHandler(
       if (!createClient) {
         throwError("Server error", StatusCodes.BAD_REQUEST, true);
       }
+      await prisma.notifications.create({
+        data: {
+          notification: `New client  profile created`,
+          desc: {
+            time: new Date().getTime(),
+            timeStamp: new Date().toISOString(),
+            link: "/clients",
+          },
+          businessOwner: { connect: { id: authId } },
+        },
+      });
 
-           socket.emit(`${authId}client`, {
-             notification: `New client  profile created`,
-             desc: {
-               time: new Date().getTime(),
-               timeStamp: new Date().toISOString(),
-               link: "/clients",
-             },
-           });
+      socket.emit(`${authId}client`, {
+        notification: `New client  profile created`,
+        desc: {
+          time: new Date().getTime(),
+          timeStamp: new Date().toISOString(),
+          link: "/clients",
+        },
+      });
 
       res.status(StatusCodes.OK).json({
         message: "Client created successfully",
@@ -631,7 +640,6 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
   const ownersDetails = details.split(" ");
   const [email, id] = ownersDetails;
 
-
   try {
     const owner = await prisma.businessOwner.findUnique({
       where: {
@@ -639,7 +647,6 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
         email: email,
       },
     });
-  
 
     if (!owner) {
       throwError("Invalid business owner", StatusCodes.BAD_REQUEST, true);
@@ -658,14 +665,27 @@ export const updateKYC = expressAsyncHandler(async (req: any, res, next) => {
       throwError("Server error", StatusCodes.BAD_REQUEST, true);
     }
 
-        socket.emit(`${owner?.id}kyc`, {
-          notification: `Your KYC has been verified`,
-          desc: {
-            time: new Date().getTime(),
-            timeStamp: new Date().toISOString(),
-            link: "/dashboard",
-          },
-        });
+    await prisma.notifications.create({
+      data: {
+        notification: `Your KYC has been verified`,
+        desc: {
+          time: new Date().getTime(),
+          timeStamp: new Date().toISOString(),
+          link: "/dashboard",
+        },
+        businessOwner: { connect: { id: owner?.id } },
+      },
+    });
+
+
+    socket.emit(`${owner?.id}kyc`, {
+      notification: `Your KYC has been verified`,
+      desc: {
+        time: new Date().getTime(),
+        timeStamp: new Date().toISOString(),
+        link: "/dashboard",
+      },
+    });
 
     res.redirect(`https://commercefyhere.netlify.app/dashboard`);
   } catch (error) {
@@ -679,9 +699,9 @@ export const getOwner = expressAsyncHandler(async (req: any, res, next) => {
     const owner = await prisma.businessOwner.findUnique({
       where: { id: authId },
       include: {
-        wallet:true,
-        business:true,
-        businessTransactions:true,
+        wallet: true,
+        business: true,
+        businessTransactions: true,
         client: {
           include: {
             invoice: true,
@@ -719,9 +739,9 @@ export const getClients = expressAsyncHandler(async (req: any, res, next) => {
     if (!owner) {
       throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
     }
-     if (!owner?.KYC) {
-       throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
-     }
+    if (!owner?.KYC) {
+      throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
+    }
     const clients = owner?.client;
 
     res.status(StatusCodes.OK).json({
@@ -751,9 +771,9 @@ export const getSpecificClientInvoice = expressAsyncHandler(
       if (!owner) {
         throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
       }
-       if (!owner?.KYC) {
-         throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
-       }
+      if (!owner?.KYC) {
+        throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
+      }
 
       const invoices = await prisma.invoice.findMany({
         where: {
@@ -788,9 +808,8 @@ export const getSpecificInvoice = expressAsyncHandler(
       if (!owner) {
         throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
       }
-      if(!owner?.KYC){
+      if (!owner?.KYC) {
         throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
-
       }
 
       const invoices = await prisma.invoice.findUnique({
@@ -807,48 +826,45 @@ export const getSpecificInvoice = expressAsyncHandler(
     }
   }
 );
-export const getInvoices = expressAsyncHandler(
-  async (req: any, res, next) => {
-    const { authId } = req;
- 
-    try {
-      const owner = await prisma.businessOwner.findUnique({
-        where: { id: authId },
-        include: {
-          client: {
-            include: {
-              invoice: true,
-            },
+export const getInvoices = expressAsyncHandler(async (req: any, res, next) => {
+  const { authId } = req;
+
+  try {
+    const owner = await prisma.businessOwner.findUnique({
+      where: { id: authId },
+      include: {
+        client: {
+          include: {
+            invoice: true,
           },
         },
-      });
+      },
+    });
 
-      if (!owner) {
-        throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
-      }
-      if(!owner?.KYC){
-        throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
-
-      }
-
-      const invoices = await prisma.invoice.findMany({
-        where: {
-      businessOwner_id:authId
-        },
-      });
-      res.status(StatusCodes.OK).json({
-        message: " invoices fetched successfully",
-        invoices,
-      });
-    } catch (error) {
-      next(error);
+    if (!owner) {
+      throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
     }
+    if (!owner?.KYC) {
+      throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        businessOwner_id: authId,
+      },
+    });
+    res.status(StatusCodes.OK).json({
+      message: " invoices fetched successfully",
+      invoices,
+    });
+  } catch (error) {
+    next(error);
   }
-);
+});
 export const getWithdrawals = expressAsyncHandler(
   async (req: any, res, next) => {
     const { authId } = req;
- 
+
     try {
       const owner = await prisma.businessOwner.findUnique({
         where: { id: authId },
@@ -864,19 +880,18 @@ export const getWithdrawals = expressAsyncHandler(
       if (!owner) {
         throwError("Unathoarized user", StatusCodes.BAD_REQUEST, true);
       }
-      if(!owner?.KYC){
+      if (!owner?.KYC) {
         throwError("Complete your KYC", StatusCodes.BAD_REQUEST, true);
-
       }
 
       const withdraw = await prisma.withdrawal.findMany({
         where: {
-      businessOwner_id:authId
+          businessOwner_id: authId,
         },
       });
       res.status(StatusCodes.OK).json({
         message: " invoices fetched successfully",
-        withdraw
+        withdraw,
       });
     } catch (error) {
       next(error);

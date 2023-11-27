@@ -113,7 +113,17 @@ export const payBusinessOwner = expressAsyncHandler(
       //   },
       // });
 
-
+    await prisma.notifications.create({
+      data: {
+        notification: `New ${transaction.type} invoice generated `,
+        desc: {
+          time: new Date().getTime(),
+          timeStamp: new Date().toISOString(),
+          link: "/dashboard",
+        },
+        businessOwner: { connect: { id: authId } },
+      },
+    });
    
          
          socket.emit(`${auth}transferNotification`, {
@@ -260,6 +270,17 @@ export const verifyPayment = expressAsyncHandler(
         },
       });
 
+         await prisma.notifications.create({
+           data: {
+             notification: `New ${transaction.type} transaction verified `,
+             desc: {
+               time: new Date().getTime(),
+               timeStamp: new Date().toISOString(),
+               link: "/dashboard",
+             },
+             businessOwner: { connect: { id: ownerN?.id } },
+           },
+         });
    
  
          socket.emit(`${ownerN?.id}transferNotification`, {
@@ -512,6 +533,20 @@ export const iniateTransfer = expressAsyncHandler(
           business: true,
         },
       });
+
+       await prisma.notifications.create({
+         data: {
+           notification: `New ${transaction.type} occurred `,
+           desc: {
+             time: new Date().getTime(),
+             timeStamp: new Date().toISOString(),
+             link: "/dashboard",
+           },
+           businessOwner: { connect: { id: ownerN?.id } },
+         },
+       });
+
+      
       socket.emit(`${ownerN?.id}transferNotification`, {
         notification: `New ${transaction.type} occurred `,
        desc:{

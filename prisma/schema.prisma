@@ -41,6 +41,7 @@ verify_otp Boolean @default(false)
                 business BusinessProfile[]
                 withdrawal Withdrawal[]
                 businessTransactions  BusinessTransactions[]
+                notifications Notifications[]
    
 }
 
@@ -147,4 +148,12 @@ dateDue String?
   items Json?
   paymentLink String?
   
+}
+model Notifications{
+    id String @id @default(uuid())
+    notification String?
+    desc  Json
+      businessOwner BusinessOwner?  @relation(fields: [businessOwner_id], references: [id])
+  businessOwner_id String ?
+    
 }
