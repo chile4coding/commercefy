@@ -441,9 +441,10 @@ export const createClientProfile = expressAsyncHandler(
 
     const { authId } = req;
     try {
-      const findUser = await prisma.client.findUnique({
+      const findUser = await prisma.client.findFirst({
         where: {
           email,
+          businessOwner_id:authId
         },
       });
 
@@ -454,8 +455,8 @@ export const createClientProfile = expressAsyncHandler(
           true
         );
       }
-      const clienExist = await prisma.client.findUnique({
-        where: { email: email },
+      const clienExist = await prisma.client.findFirst({
+        where: { email: email , businessOwner_id:authId},
       });
       if (clienExist) {
         throwError("Client already exist", StatusCodes.BAD_REQUEST, true);

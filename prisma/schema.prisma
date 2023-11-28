@@ -73,7 +73,7 @@ model Wallet{
 
 model Client{
   id String @id @default(uuid())
-  email String @unique
+  email String?
  name String
   avatar String? 
   phone String?
